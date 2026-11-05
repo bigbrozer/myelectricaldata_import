@@ -285,9 +285,9 @@ class Ajax:
                     },
                 }
                 if "hc" in result[target]:
-                    data["result"]["hc"] = (result[target]["hc"],)
+                    data["result"]["hc"] = result[target]["hc"]
                 if "hp" in result[target]:
-                    data["result"]["hp"] = (result[target]["hp"],)
+                    data["result"]["hp"] = result[target]["hp"]
                 if "event_date" in result[target]:
                     data["result"]["event_date"] = result[target]["event_date"]
             else:
