@@ -36,10 +36,12 @@ class Contract:
                 response = contracts
                 response.update(usage_point)
 
-                if contracts["offpeak_hours"] is not None:
-                    offpeak_hours = re.search("HC \((.*)\)", contracts["offpeak_hours"]).group(1)
-                else:
-                    offpeak_hours = ""
+                offpeak_match = (
+                    re.search(r"HC \((.*)\)", contracts["offpeak_hours"])
+                    if contracts["offpeak_hours"] is not None
+                    else None
+                )
+                offpeak_hours = offpeak_match.group(1) if offpeak_match else ""
                 if "last_activation_date" in contracts and contracts["last_activation_date"] is not None:
                     last_activation_date = (
                         datetime.datetime.strptime(contracts["last_activation_date"], "%Y-%m-%d%z")
