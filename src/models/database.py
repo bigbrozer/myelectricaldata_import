@@ -1096,11 +1096,17 @@ class Database:
         self.session.flush()
 
     def reset_daily(self, usage_point_id, date=None, mesure_type="consumption"):
-        data = self.get_daily_date(usage_point_id, date, mesure_type)
         if mesure_type == "consumption":
             table = ConsumptionDaily
         else:
             table = ProductionDaily
+        if date is None:
+            # Reset every row of the usage point.
+            values = {table.value: 0, table.blacklist: 0, table.fail_count: 0}
+            self.session.execute(update(table, values=values).where(table.usage_point_id == usage_point_id))
+            self.session.flush()
+            return True
+        data = self.get_daily_date(usage_point_id, date, mesure_type)
         if data is not None:
             values = {
                 table.value: 0,
@@ -1404,6 +1410,13 @@ class Database:
         self.session.flush()
 
     def reset_detail(self, usage_point_id, date=None, mesure_type="consumption"):
+        if date is None:
+            # Reset every row of the usage point.
+            table = ConsumptionDetail if mesure_type == "consumption" else ProductionDetail
+            values = {table.value: 0, table.interval: 0, table.blacklist: 0, table.fail_count: 0}
+            self.session.execute(update(table, values=values).where(table.usage_point_id == usage_point_id))
+            self.session.flush()
+            return True
         detail = self.get_detail_date(usage_point_id, date, mesure_type)
         if detail is not None:
             detail.value = 0
@@ -1728,6 +1741,13 @@ class Database:
         return fail_count
 
     def reset_daily_max_power(self, usage_point_id, date=None):
+        if date is None:
+            # Reset every row of the usage point.
+            table = ConsumptionDailyMaxPower
+            values = {table.event_date: None, table.value: 0, table.blacklist: 0, table.fail_count: 0}
+            self.session.execute(update(table, values=values).where(table.usage_point_id == usage_point_id))
+            self.session.flush()
+            return True
         daily = self.get_daily_max_power_date(usage_point_id, date)
         if daily is not None:
             daily.event_date = None
