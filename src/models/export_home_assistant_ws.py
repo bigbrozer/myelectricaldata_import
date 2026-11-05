@@ -89,7 +89,7 @@ class HomeAssistantWs:
         try:
             check_ssl = CONFIG.get("ssl")
             sslopt = None
-            if check_ssl and "gateway" in check_ssl:
+            if check_ssl and "gateway" in check_ssl and not str2bool(check_ssl["gateway"]):
                 sslopt = {"cert_reqs": ssl.CERT_NONE}
             self.websocket = websocket.WebSocket(sslopt=sslopt)
             logging.info("Connexion au WebSocket Home Assistant %s", self.url)
