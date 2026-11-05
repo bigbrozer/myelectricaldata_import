@@ -1,5 +1,6 @@
 import datetime
 import logging
+import sys
 
 import influxdb_client
 from dateutil.tz import tzlocal
@@ -42,7 +43,7 @@ class InfluxDB:
             "flush_interval": write_options.get("flush_interval", 1000),
             "jitter_interval": write_options.get("jitter_interval", 0),
             "retry_interval": write_options.get("retry_interval", 5000),
-            "max_retry_time": write_options.get("max_retry_time", "180_000"),
+            "max_retry_time": int(write_options.get("max_retry_time", 180_000)),
             "max_retries": write_options.get("max_retries", 5),
             "max_retry_delay": write_options.get("max_retry_delay", 125_000),
             "exponential_base": write_options.get("exponential_base", 2),
@@ -76,10 +77,10 @@ class InfluxDB:
                     title("Connection success")
                 else:
                     logging.critical("Impossible de se connecter à InfluxDB.")
-                    exit(1)
+                    sys.exit(1)
             except Exception as e:
                 logging.critical(f"Erreur de connexion InfluxDB : {e}")
-                exit(1)
+                sys.exit(1)
         else:
             title("Mode VictoriaMetrics actif (pas de vérification de santé)")
 
@@ -97,6 +98,7 @@ class InfluxDB:
                     jitter_interval=self.write_options["jitter_interval"],
                     retry_interval=self.write_options["retry_interval"],
                     max_retries=self.write_options["max_retries"],
+                    max_retry_time=self.write_options["max_retry_time"],
                     max_retry_delay=self.write_options["max_retry_delay"],
                     exponential_base=self.write_options["exponential_base"],
                 )
@@ -124,7 +126,7 @@ class InfluxDB:
             try:
                 buckets = self.buckets_api.find_buckets().buckets
                 for bucket in buckets:
-                    if bucket.name == self.bucket:
+                    if bucket.name == self.bucket and bucket.retention_rules:
                         self.retention = bucket.retention_rules[0].every_seconds
                         self.max_retention = datetime.datetime.now() - datetime.timedelta(seconds=self.retention)
             except Exception as e:
@@ -166,7 +168,7 @@ from(bucket: "{self.bucket}")
             date_object = datetime.datetime.now()
         else:
             date_object = date
-        if self.retention == 0 or (date.replace(tzinfo=None) > date_max.replace(tzinfo=None)):
+        if self.retention == 0 or (date_object.replace(tzinfo=None) > date_max.replace(tzinfo=None)):
             record = {
                 "measurement": measurement,
                 "time": date_object,
