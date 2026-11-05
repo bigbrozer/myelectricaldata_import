@@ -254,10 +254,6 @@ class Database:
             if usage_point.usage_point_id not in current_usage_point_id:
                 logging.warning(f"- Suppression du point de livraison {usage_point.usage_point_id}")
                 self.delete_usage_point(usage_point.usage_point_id)
-                self.delete_addresse(usage_point.usage_point_id)
-                self.delete_daily(usage_point.usage_point_id)
-                self.delete_detail(usage_point.usage_point_id)
-                self.delete_daily_max_power(usage_point.usage_point_id)
         return True
 
     def refresh_object(self):
@@ -682,6 +678,7 @@ class Database:
         self.session.execute(delete(ConsumptionDaily).where(ConsumptionDaily.usage_point_id == usage_point_id))
         self.session.execute(delete(ProductionDetail).where(ProductionDetail.usage_point_id == usage_point_id))
         self.session.execute(delete(ProductionDaily).where(ProductionDaily.usage_point_id == usage_point_id))
+        self.session.execute(delete(Statistique).where(Statistique.usage_point_id == usage_point_id))
         self.session.execute(delete(UsagePoints).where(UsagePoints.usage_point_id == usage_point_id))
         self.session.flush()
         self.session.close()
