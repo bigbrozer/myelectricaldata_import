@@ -571,8 +571,7 @@ class Stat:  # pylint: disable=R0902,R0904
             now_date.replace(month=1, day=1) - relativedelta(years=1),
             datetime.min.time(),
         )
-        last_day_of_month = calendar.monthrange(int(begin.strftime("%Y")), 12)[1]
-        end = datetime.combine(begin.replace(month=1, day=last_day_of_month), datetime.max.time())
+        end = datetime.combine(begin.replace(month=12, day=31), datetime.max.time())
         for day in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_last_year = self.value_last_year + day.value
         logging.debug(f" last_year => {self.value_last_year}")
@@ -585,7 +584,7 @@ class Stat:  # pylint: disable=R0902,R0904
     def yearly_evolution(self):
         self.current_year()
         self.current_year_last_year()
-        if self.value_last_month_last_year != 0:
+        if self.value_current_year_last_year != 0:
             self.value_yearly_evolution = ((100 * self.value_current_year) / self.value_current_year_last_year) - 100
         logging.debug(f" yearly_evolution => {self.value_yearly_evolution}")
         return self.value_yearly_evolution
@@ -623,7 +622,7 @@ class Stat:  # pylint: disable=R0902,R0904
                 value_peak_offpeak_percent_hp = value_peak_offpeak_percent_hp + day.value
             if measure_type == "HC":
                 value_peak_offpeak_percent_hc = value_peak_offpeak_percent_hc + day.value
-        if value_peak_offpeak_percent_hc != 0:
+        if value_peak_offpeak_percent_hp != 0:
             value_peak_offpeak_percent_hp_vs_hc = abs(
                 ((100 * value_peak_offpeak_percent_hc) / value_peak_offpeak_percent_hp) - 100
             )

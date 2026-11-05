@@ -1,6 +1,7 @@
 """Regression tests for bugs fixed in the src/ review (Phase 1)."""
 
 import dataclasses
+from datetime import datetime
 
 import pytest
 
@@ -13,6 +14,29 @@ class MockResponse:
     @property
     def ok(self):
         return 200 <= self.status_code < 400
+
+
+def test_stat_last_year_covers_the_whole_year():
+    from models.stat import Stat
+
+    last_year = Stat("pdl1", "consumption").last_year()
+
+    year = datetime.now().year - 1
+    assert last_year["begin"] == f"{year}-01-01"
+    assert last_year["end"] == f"{year}-12-31"
+
+
+def test_stat_yearly_evolution_without_previous_year():
+    from models.stat import Stat
+
+    stat = Stat("pdl1", "consumption")
+    stat.current_year = lambda: None
+    stat.current_year_last_year = lambda: None
+    stat.value_current_year = 1000
+    stat.value_current_year_last_year = 0
+    stat.value_last_month_last_year = 10
+
+    assert stat.yearly_evolution() == 0
 
 
 @pytest.mark.parametrize(
