@@ -11,6 +11,14 @@ from models.ajax import Ajax
 ROUTER = APIRouter(tags=["Données"])
 
 
+def parse_date_range(begin, end):
+    """Parse begin/end (YYYY-MM-DD), raising a 422 on invalid format."""
+    try:
+        return datetime.strptime(begin, "%Y-%m-%d"), datetime.strptime(end, "%Y-%m-%d")
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail="Format de date invalide, attendu : YYYY-MM-DD") from e
+
+
 @ROUTER.put("/tempo", include_in_schema=False)
 @ROUTER.put("/tempo/", include_in_schema=False)
 def put_tempo():
@@ -89,8 +97,7 @@ def get_data_daily(
 ):
     """Retourne les données du cache local de consommation journalière."""
     usage_point_id = usage_point_id.strip()
-    begin = datetime.strptime(begin, "%Y-%m-%d")
-    end = datetime.strptime(end, "%Y-%m-%d")
+    begin, end = parse_date_range(begin, end)
     if measurement_direction not in ["consumption", "production"]:
         raise HTTPException(
             status_code=404,
@@ -120,8 +127,7 @@ def get_data_detail(
 ):
     """Retourne les données du cache local de consommation détaillée."""
     usage_point_id = usage_point_id.strip()
-    begin = datetime.strptime(begin, "%Y-%m-%d")
-    end = datetime.strptime(end, "%Y-%m-%d")
+    begin, end = parse_date_range(begin, end)
     if measurement_direction not in ["consumption", "production"]:
         raise HTTPException(
             status_code=404,
