@@ -214,7 +214,10 @@ class Ajax:
                     usage_point_id=self.usage_point_id,
                 ).fetch(date)
         elif target == "consumption_max_power":
-            if hasattr(self.usage_point_config, "consumption_max_power") and self.usage_point_config.consumption:
+            if (
+                hasattr(self.usage_point_config, "consumption_max_power")
+                and self.usage_point_config.consumption_max_power
+            ):
                 title(f"[{self.usage_point_id}] Importation de la puissance maximum journalière du {date}:")
                 result["consumption_max_power"] = Power(
                     headers=self.headers,
@@ -249,6 +252,12 @@ class Ajax:
                 ).fetch(date)
         else:
             return {"error": "true", "notif": "Target inconnue.", "result": ""}
+        if target not in result:
+            return {
+                "error": "true",
+                "notif": f'La récupération "{target}" est désactivée sur ce point de livraison.',
+                "result": "",
+            }
         if "error" in result[target] and result[target]["error"]:
             data = {
                 "error": "true",
@@ -333,6 +342,12 @@ class Ajax:
                 ).blacklist(date, 1)
         else:
             return {"error": "true", "notif": "Target inconnue.", "result": ""}
+        if target not in result:
+            return {
+                "error": "true",
+                "notif": f'La récupération "{target}" est désactivée sur ce point de livraison.',
+                "result": "",
+            }
         if not result[target]:
             return {
                 "error": "true",
@@ -390,6 +405,12 @@ class Ajax:
                 ).blacklist(date, 0)
         else:
             return {"error": "true", "notif": "Target inconnue.", "result": ""}
+        if target not in result:
+            return {
+                "error": "true",
+                "notif": f'La récupération "{target}" est désactivée sur ce point de livraison.',
+                "result": "",
+            }
         if not result[target]:
             return {
                 "error": "true",
