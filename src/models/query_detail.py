@@ -162,12 +162,6 @@ class Detail:
         self.db.reset_detail_range(self.usage_point_id, begin, end, self.measure_type)
         return True
 
-    def delete_daily(self, date):
-        begin = datetime.combine(datetime.strptime(date, self.date_format), datetime.min.time())
-        end = datetime.combine(datetime.strptime(date, self.date_format), datetime.max.time())
-        self.db.delete_detail_range(self.usage_point_id, begin, end, self.measure_type)
-        return True
-
     def blacklist(self, date, action):
         """Blacklist (action=1) or whitelist (action=0) every detail row of the given day (YYYY-MM-DD)."""
         begin = datetime.combine(datetime.strptime(date, self.date_format), datetime.min.time())
@@ -214,9 +208,3 @@ class Detail:
             "notif": f"Aucune donnée n'est disponible chez Enedis sur cette date ({date})",
             "fail_count": self.db.get_detail_fail_count(self.usage_point_id, date, self.measure_type),
         }
-
-
-def is_between(time, time_range):
-    if time_range[1] < time_range[0]:
-        return time > time_range[0] or time <= time_range[1]
-    return time_range[0] < time <= time_range[1]

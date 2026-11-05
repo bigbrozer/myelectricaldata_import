@@ -48,16 +48,6 @@ class Mqtt:
         except Exception as e:
             logging.critical(["MQTT Connexion failed", e])
 
-    def publish(self, topic, msg, prefix=None):
-        if prefix is None:
-            prefix = self.prefix
-        result = self.client.publish(f"{self.prefix}/{prefix}/{topic}", str(msg), qos=self.qos, retain=self.retain)
-        status = result[0]
-        if status == 0:
-            logging.debug(f" MQTT Send : {prefix}/{topic} => {msg}")
-        else:
-            logging.info(f" - Failed to send message to topic {prefix}/{topic}")
-
     def publish_multiple(self, data, prefix=None):
         if data:
             payload = []

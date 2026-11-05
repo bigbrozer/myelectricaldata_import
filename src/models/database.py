@@ -124,16 +124,6 @@ class Database:
             logging.error(e)
             logging.critical("Database initialize failed!")
 
-    def purge_database(self):
-        """Purges the SQLite database."""
-        logging.separator_warning()
-        logging.info("Reset SQLite Database")
-        if os.path.exists(f"{self.path}/cache.db"):
-            os.remove(f"{self.path}/cache.db")
-            logging.info(" => Success")
-        else:
-            logging.info(" => No cache detected")
-
     def lock_status(self):
         """Check the lock status of the database.
 
@@ -1382,34 +1372,6 @@ class Database:
             row.blacklist = action
         self.session.flush()
         return True
-
-    def delete_detail_range(self, usage_point_id, date, mesure_type="consumption"):
-        if mesure_type == "consumption":
-            table = ConsumptionDetail
-        else:
-            table = ProductionDetail
-        if date is not None:
-            unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode("utf-8")).hexdigest()
-            self.session.execute(delete(table).where(table.id == unique_id))
-        else:
-            self.session.execute(delete(table).where(table.usage_point_id == usage_point_id))
-        self.session.flush()
-        return True
-
-    def get_ratio_hc_hp(self, usage_point_id, begin, end, mesure_type="consumption"):
-        result = {
-            "HC": 0,
-            "HP": 0,
-        }
-        detail_data = self.get_detail_all(
-            usage_point_id=usage_point_id,
-            begin=begin,
-            end=end,
-            measurement_direction=mesure_type,
-        )
-        for data in detail_data:
-            result[data.measure_type] = result[data.measure_type] + data.value
-        return result
 
     def get_detail_fail_count(self, usage_point_id, date, mesure_type="consumption"):
         detail = self.get_detail_date(usage_point_id, date, mesure_type)

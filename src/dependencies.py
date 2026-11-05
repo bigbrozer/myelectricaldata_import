@@ -108,29 +108,6 @@ def is_integer(element):
         return False
 
 
-def reformat_json(yaml):
-    """Reformat a JSON object.
-
-    Args:
-        yaml (dict): The JSON object to reformat.
-
-    Returns:
-        dict: The reformatted JSON object.
-
-    """
-    result = {}
-    for key, value in yaml.items():
-        if value in ["true", "false"]:
-            result[key] = str2bool(value)
-        elif type(value) == dict:
-            result[key] = value
-        elif not isinstance(value, bool) and is_float(value):
-            result[key] = float(value)
-        else:
-            result[key] = value
-    return result
-
-
 def truncate(f, n=2):
     """Truncate a float number to a specified number of decimal places.
 
