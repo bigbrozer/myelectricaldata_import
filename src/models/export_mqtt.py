@@ -42,11 +42,11 @@ class ExportMqtt:
         else:
             quota_limit = ""
         if hasattr(usage_point_id_config, "quota_reset_at") and usage_point_id_config.quota_reset_at is not None:
-            quota_reset_at = (usage_point_id_config.quota_reset_at.strftime("%Y-%m-%d %H:%M:%S"),)
+            quota_reset_at = usage_point_id_config.quota_reset_at.strftime("%Y-%m-%d %H:%M:%S")
         else:
             quota_reset_at = ""
         if hasattr(usage_point_id_config, "last_call") and usage_point_id_config.last_call is not None:
-            last_call = (usage_point_id_config.last_call.strftime("%Y-%m-%d %H:%M:%S"),)
+            last_call = usage_point_id_config.last_call.strftime("%Y-%m-%d %H:%M:%S")
         else:
             last_call = ""
         if hasattr(usage_point_id_config, "ban") and usage_point_id_config.ban is not None:
