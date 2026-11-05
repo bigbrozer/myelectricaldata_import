@@ -1,4 +1,5 @@
 import ast
+import json
 import logging
 from datetime import datetime, timedelta
 
@@ -463,7 +464,11 @@ class ExportMqtt:
         if tempo_color:
             mqtt_data[f"tempo/color/tomorrow"] = tempo_color[0].color
         if tempo_data:
-            for year, data in ast.literal_eval(tempo_data[0].value).items():
+            try:
+                tempo_stats = json.loads(tempo_data[0].value)
+            except ValueError:
+                tempo_stats = ast.literal_eval(tempo_data[0].value)
+            for year, data in tempo_stats.items():
                 if year == datetime.now().strftime("%Y"):
                     year = "current"
                 for color, tempo in data["TEMPO"].items():
