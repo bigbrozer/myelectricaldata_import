@@ -1,5 +1,3 @@
-import json
-
 from jinja2 import Template
 
 from dependencies import APPLICATION_PATH
@@ -19,18 +17,7 @@ class UsagePointSelect:
             list_usage_points_id += '<option value="none">--- Choix du point de livraison ---</option>'
         for config in self.db.get_usage_point_all():
             usage_point = config.usage_point_id
-            address_data = self.db.get_addresse(usage_point)
-            if hasattr(config, "name"):
-                text = config.name
-            elif address_data is not None:
-                address_data = json.loads(address_data)
-                street = address_data["usage_point"]["usage_point_addresses"]["street"]
-                postal_code = address_data["usage_point"]["usage_point_addresses"]["postal_code"]
-                city = address_data["usage_point"]["usage_point_addresses"]["city"]
-                country = address_data["usage_point"]["usage_point_addresses"]["country"]
-                text = f"{usage_point} - {street}, {postal_code} {city} {country}"
-            else:
-                text = usage_point
+            text = config.name or usage_point
             select = ""
             style = ""
             disable = ""
