@@ -35,7 +35,7 @@ class HomeAssistantWs:
         self.token = None
         self.id = 1
         self.purge = False
-        self.purge_force = True
+        self.purge_force = False
         self.batch_size = 1000
         self.current_stats = []
         if self.load_config():
@@ -333,7 +333,7 @@ class HomeAssistantWs:
                     for statistic_id, _ in stats_kwh.items():
                         list_statistic_ids.append(statistic_id)
                     self.clear_data(list_statistic_ids)
-                    CONFIG.set("purge", False)
+                    CONFIG.set("home_assistant_ws.purge", False)
 
 
                 for statistic_id, data in stats_kwh.items():
@@ -496,7 +496,7 @@ class HomeAssistantWs:
                     for statistic_id, _ in stats_kwh.items():
                         list_statistic_ids.append(statistic_id)
                     self.clear_data(list_statistic_ids)
-                    CONFIG.set("purge", False)
+                    CONFIG.set("home_assistant_ws.purge", False)
 
                 for statistic_id, data in stats_kwh.items():
                     metadata = {
