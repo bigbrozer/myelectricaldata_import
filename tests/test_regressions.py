@@ -16,6 +16,21 @@ class MockResponse:
         return 200 <= self.status_code < 400
 
 
+def test_job_import_data_releases_lock_when_an_exporter_raises(mocker):
+    from init import DB
+    from models.jobs import Job
+
+    for method in ["get_gateway_status", "get_tempo", "get_ecowatt"]:
+        mocker.patch(f"models.jobs.Job.{method}")
+    mocker.patch("models.jobs.Job.get_account_status", side_effect=RuntimeError("boom"))
+
+    job = Job("pdl1")
+    with pytest.raises(RuntimeError):
+        job.job_import_data(wait=False, target="account_status")
+
+    assert DB.lock_status() is False
+
+
 def test_stat_last_year_covers_the_whole_year():
     from models.stat import Stat
 

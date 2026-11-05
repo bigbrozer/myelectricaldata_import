@@ -49,98 +49,98 @@ class Job:
             return {"status": False, "notif": "Importation déjà en cours..."}
         else:
             self.db.lock()
+            try:
+                if wait:
+                    title(f"Démarrage du job d'importation dans {self.wait_job_start}s")
+                    i = self.wait_job_start
+                    while i > 0:
+                        logging.info(f"{i}s")
+                        time.sleep(1)
+                        i = i - 1
 
-            if wait:
-                title("Démarrage du job d'importation dans 10s")
-                i = self.wait_job_start
-                while i > 0:
-                    logging.info(f"{i}s")
-                    time.sleep(1)
-                    i = i - 1
+                if target == "gateway_status" or target is None:
+                    self.get_gateway_status()
 
-            if target == "gateway_status" or target is None:
-                self.get_gateway_status()
+                # #####################################################################################################
+                # FETCH TEMPO DATA
+                if target == "tempo" or target is None:
+                    self.get_tempo()
 
-            # ######################################################################################################
-            # FETCH TEMPO DATA
-            if target == "tempo" or target is None:
-                self.get_tempo()
+                # #####################################################################################################
+                # FETCH ECOWATT DATA
+                if target == "ecowatt" or target is None:
+                    self.get_ecowatt()
 
-            # ######################################################################################################
-            # FETCH ECOWATT DATA
-            if target == "ecowatt" or target is None:
-                self.get_ecowatt()
+                for self.usage_point_config in self.usage_points:
+                    self.usage_point_id = self.usage_point_config.usage_point_id
+                    log_usage_point_id(self.usage_point_id)
+                    self.db.last_call_update(self.usage_point_id)
+                    if self.usage_point_config.enable:
+                        ###############################################################################################
+                        # CHECK ACCOUNT DATA
+                        if target == "account_status" or target is None:
+                            self.get_account_status()
 
-            for self.usage_point_config in self.usage_points:
-                self.usage_point_id = self.usage_point_config.usage_point_id
-                log_usage_point_id(self.usage_point_id)
-                self.db.last_call_update(self.usage_point_id)
-                if self.usage_point_config.enable:
-                    #######################################################################################################
-                    # CHECK ACCOUNT DATA
-                    if target == "account_status" or target is None:
-                        self.get_account_status()
+                        ###############################################################################################
+                        # CONTRACT
+                        if target == "contract" or target is None:
+                            self.get_contract()
 
-                    #######################################################################################################
-                    # CONTRACT
-                    if target == "contract" or target is None:
-                        self.get_contract()
+                        ###############################################################################################
+                        # ADDRESSE
+                        if target == "addresses" or target is None:
+                            self.get_addresses()
 
-                    #######################################################################################################
-                    # ADDRESSE
-                    if target == "addresses" or target is None:
-                        self.get_addresses()
+                        ###############################################################################################
+                        # CONSUMPTION / PRODUCTION
+                        if target == "consumption" or target is None:
+                            self.get_consumption()
 
-                    #######################################################################################################
-                    # CONSUMPTION / PRODUCTION
-                    if target == "consumption" or target is None:
-                        self.get_consumption()
+                        if target == "consumption_detail" or target is None:
+                            self.get_consumption_detail()
 
-                    if target == "consumption_detail" or target is None:
-                        self.get_consumption_detail()
+                        if target == "production" or target is None:
+                            self.get_production()
 
-                    if target == "production" or target is None:
-                        self.get_production()
+                        if target == "production_detail" or target is None:
+                            self.get_production_detail()
 
-                    if target == "production_detail" or target is None:
-                        self.get_production_detail()
+                        if target == "consumption_max_power" or target is None:
+                            self.get_consumption_max_power()
 
-                    if target == "consumption_max_power" or target is None:
-                        self.get_consumption_max_power()
+                        ###############################################################################################
+                        # STATISTIQUES
+                        if target == "stat" or target is None:
+                            self.stat_price()
 
-                    #######################################################################################################
-                    # STATISTIQUES
-                    if target == "stat" or target is None:
-                        self.stat_price()
+                        ###############################################################################################
+                        # MQTT
+                        if target == "mqtt" or target is None:
+                            self.export_mqtt()
 
-                    #######################################################################################################
-                    # MQTT
-                    if target == "mqtt" or target is None:
-                        self.export_mqtt()
+                        ###############################################################################################
+                        # HOME ASSISTANT
+                        if target == "home_assistant" or target is None:
+                            self.export_home_assistant()
 
-                    #######################################################################################################
-                    # HOME ASSISTANT
-                    if target == "home_assistant" or target is None:
-                        self.export_home_assistant()
+                        ###############################################################################################
+                        # HOME ASSISTANT WS
+                        if target == "home_assistant_ws" or target is None:
+                            self.export_home_assistant_ws()
 
-                    #######################################################################################################
-                    # HOME ASSISTANT WS
-                    if target == "home_assistant_ws" or target is None:
-                        self.export_home_assistant_ws()
+                        ###############################################################################################
+                        # INFLUXDB
+                        if target == "influxdb" or target is None:
+                            self.export_influxdb()
+                    else:
+                        logging.info(
+                            " => Point de livraison Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)."
+                        )
 
-                    #######################################################################################################
-                    # INFLUXDB
-                    if target == "influxdb" or target is None:
-                        self.export_influxdb()
-                else:
-                    logging.info(
-                        f" => Point de livraison Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)."
-                    )
-
-            finish()
-
-            self.usage_point_id = None
-            self.db.unlock()
+                finish()
+            finally:
+                self.usage_point_id = None
+                self.db.unlock()
             return {"status": True, "notif": "Importation terminée"}
 
     def header_generate(self, token=True):
