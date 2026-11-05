@@ -47,7 +47,7 @@ class ExportInfluxDB:
             start = datetime.strftime(last_data, self.time_format)
             end = datetime.strftime(first_data, self.time_format)
             influxdb_data = INFLUXDB.count(start, end, measurement_direction)
-            count = 1
+            count = 0
             for data in influxdb_data:
                 for record in data.records:
                     count += record.get_value()
@@ -98,7 +98,7 @@ class ExportInfluxDB:
             start = datetime.strftime(last_data, self.time_format)
             end = datetime.strftime(first_data, self.time_format)
             influxdb_data = INFLUXDB.count(start, end, measurement)
-            count = 1
+            count = 0
             for data in influxdb_data:
                 for record in data.records:
                     count += record.get_value()
