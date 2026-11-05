@@ -39,7 +39,7 @@ class ExportInfluxDB:
         else:
             price = self.usage_point_config.production_price
         logging.info(f'Envoi des données "{measurement_direction.upper()}" dans influxdb')
-        get_daily_all = self.db.get_daily_all(self.usage_point_id)
+        get_daily_all = self.db.get_daily_all(self.usage_point_id, measurement_direction)
         get_daily_all_count = len(get_daily_all)
         last_data = self.db.get_daily_last_date(self.usage_point_id, measurement_direction)
         first_data = self.db.get_daily_first_date(self.usage_point_id, measurement_direction)
