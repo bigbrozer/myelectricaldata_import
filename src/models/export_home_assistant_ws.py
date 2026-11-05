@@ -509,13 +509,15 @@ class HomeAssistantWs:
                         "statistic_id": statistic_id,
                         "unit_of_measurement": "kWh",
                     }
-                    import_statistics = {
-                        "id": self.id,
-                        "type": "recorder/import_statistics",
-                        "metadata": metadata,
-                        "stats": list(data["data"].values()),
-                    }
-                    self.send(import_statistics)
+                    for chunk in chunks_list(list(data["data"].values()), self.batch_size):
+                        self.send(
+                            {
+                                "id": self.id,
+                                "type": "recorder/import_statistics",
+                                "metadata": metadata,
+                                "stats": chunk,
+                            }
+                        )
                     if self.mqtt and "enable" in self.mqtt and str2bool(self.mqtt["enable"]):
                         HomeAssistant(self.usage_point_id).sensor(
                             topic=f"myelectricaldata_{measurement_direction}/{self.usage_point_id}_energy",
@@ -538,13 +540,15 @@ class HomeAssistantWs:
                         "statistic_id": statistic_id,
                         "unit_of_measurement": "EURO",
                     }
-                    import_statistics = {
-                        "id": self.id,
-                        "type": "recorder/import_statistics",
-                        "metadata": metadata,
-                        "stats": list(data["data"].values()),
-                    }
-                    self.send(import_statistics)
+                    for chunk in chunks_list(list(data["data"].values()), self.batch_size):
+                        self.send(
+                            {
+                                "id": self.id,
+                                "type": "recorder/import_statistics",
+                                "metadata": metadata,
+                                "stats": chunk,
+                            }
+                        )
                     if self.mqtt and "enable" in self.mqtt and str2bool(self.mqtt["enable"]):
                         HomeAssistant(self.usage_point_id).sensor(
                             topic=f"myelectricaldata_{measurement_direction}/{self.usage_point_id}_cost",
