@@ -31,6 +31,19 @@ def test_job_import_data_releases_lock_when_an_exporter_raises(mocker):
     assert DB.lock_status() is False
 
 
+def test_export_home_assistant_ws_errors_are_caught(mocker, caplog):
+    from models.jobs import Job
+
+    mocker.patch("models.jobs.HomeAssistantWs", side_effect=AttributeError("websocket is None"))
+    job = Job("pdl1")
+    job.usage_point_config = job.usage_points[0]
+    job.home_assistant_ws_config = {"enable": "true"}
+
+    job.export_home_assistant_ws()
+
+    assert "websocket is None" in caplog.text
+
+
 def test_stat_last_year_covers_the_whole_year():
     from models.stat import Stat
 

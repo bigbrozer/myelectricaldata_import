@@ -445,16 +445,17 @@ class Job:
 
     def export_home_assistant_ws(self):
         detail = "Import des données vers l'onglet Energy de Home Assistant (WebSocket)"
-        usage_point_id = self.usage_point_config.usage_point_id
-        title(f"[{usage_point_id}] {detail}")
-        if (
-            self.home_assistant_ws_config
-            and "enable" in self.home_assistant_ws_config
-            and str2bool(self.home_assistant_ws_config["enable"])
-        ):
-            HomeAssistantWs(usage_point_id)
-        else:
-            title("Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
+        try:
+            usage_point_id = self.usage_point_config.usage_point_id
+            title(f"[{usage_point_id}] {detail}")
+            if self.home_assistant_ws_config and str2bool(self.home_assistant_ws_config.get("enable")):
+                HomeAssistantWs(usage_point_id)
+            else:
+                title("Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
+        except Exception as e:
+            traceback.print_exc()
+            logging.error(f"Erreur lors de l'{detail.lower()}")
+            logging.error(e)
 
     def export_influxdb(self):
         detail = "Export InfluxDB"
