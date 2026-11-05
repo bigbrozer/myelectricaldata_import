@@ -134,3 +134,31 @@ def test_str2bool_and_is_bool():
     assert str2bool("no") is False
     assert is_bool("yes") and is_bool("False") and is_bool(0)
     assert not is_bool("maybe") and not is_bool(2.5)
+
+
+def test_influxdb_production_detail_export(mocker):
+    from models.export_influxdb import ExportInfluxDB
+
+    @dataclasses.dataclass
+    class Detail:
+        date: datetime
+        value: int = 1000
+        interval: int = 30
+
+    rows = [Detail(datetime(2024, 1, 1, 0, 0)), Detail(datetime(2024, 1, 1, 0, 30))]
+    mocker.patch("models.database.Database.get_detail_all", return_value=rows)
+    mocker.patch("models.database.Database.get_detail_last_date", return_value=rows[0].date)
+    mocker.patch("models.database.Database.get_detail_first_date", return_value=rows[-1].date)
+    influxdb = mocker.patch("models.export_influxdb.INFLUXDB")
+    influxdb.count.return_value = []
+
+    @dataclasses.dataclass
+    class UsagePointConfig:
+        usage_point_id: str = "pdl1"
+        production_price: float = 0.1
+
+    ExportInfluxDB({}, UsagePointConfig()).detail(measurement_direction="production")
+
+    assert influxdb.write.call_count == 2
+    assert influxdb.write.call_args.kwargs["measurement"] == "production_detail"
+    assert influxdb.write.call_args.kwargs["tags"]["measure_type"] == "PROD"
