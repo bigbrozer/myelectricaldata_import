@@ -1490,7 +1490,8 @@ class Database:
         return result
 
     def get_detail_fail_count(self, usage_point_id, date, mesure_type="consumption"):
-        return self.get_detail_date(usage_point_id, date, mesure_type).fail_count
+        detail = self.get_detail_date(usage_point_id, date, mesure_type)
+        return detail.fail_count if detail is not None else 0
 
     def detail_fail_increment(self, usage_point_id, date, mesure_type="consumption"):
         unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode("utf-8")).hexdigest()
