@@ -1454,6 +1454,13 @@ class Database:
         self.session.flush()
         return True
 
+    def blacklist_detail_range(self, usage_point_id, begin, end, action=True, mesure_type="consumption"):
+        """Set the blacklist flag on every detail row of the usage point between begin and end."""
+        for row in self.get_detail_range(usage_point_id, begin, end, mesure_type):
+            row.blacklist = action
+        self.session.flush()
+        return True
+
     def delete_detail_range(self, usage_point_id, date, mesure_type="consumption"):
         if mesure_type == "consumption":
             table = ConsumptionDetail

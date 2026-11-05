@@ -168,6 +168,13 @@ class Detail:
         self.db.delete_detail_range(self.usage_point_id, begin, end, self.measure_type)
         return True
 
+    def blacklist(self, date, action):
+        """Blacklist (action=1) or whitelist (action=0) every detail row of the given day (YYYY-MM-DD)."""
+        begin = datetime.combine(datetime.strptime(date, self.date_format), datetime.min.time())
+        end = datetime.combine(datetime.strptime(date, self.date_format), datetime.max.time())
+        self.db.blacklist_detail_range(self.usage_point_id, begin, end, action, self.measure_type)
+        return True
+
     def reset(self, date=None):
         if date is not None:
             date = datetime.strptime(date, self.date_detail_format)
