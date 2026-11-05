@@ -18,7 +18,6 @@ from templates.models.usage_point_select import UsagePointSelect
 
 class UsagePoint:
     def __init__(self, usage_point_id):
-        # if not DB.lock_status():
         self.config = CONFIG
         self.db = DB
         self.db.refresh_object()
@@ -184,9 +183,6 @@ class UsagePoint:
         self.recap_hc_hp = "Pas de données."
 
     def display(self):
-        # if self.db.lock_status():
-        #     return Loading().display()
-        # else:
         if self.headers is None:
             self.javascript = "window.location.href = '/';"
             with open(f"{self.application_path}/templates/html/usage_point_id.html") as file_:

@@ -2,7 +2,6 @@ import markdown
 from jinja2 import Template
 
 from dependencies import APPLICATION_PATH
-from templates.loading import Loading
 from templates.models.configuration import Configuration
 from templates.models.menu import Menu
 from templates.models.sidemenu import SideMenu
@@ -27,9 +26,6 @@ class Index:
         self.configuration_div = Configuration(self.db, "Ajout d'un point de livraison", display_usage_point_id=True)
 
     def display(self):
-        # if DB.lock_status():
-        #     return Loading().display()
-        # else:
         with open(f"{self.application_path}/templates/md/index.md") as file_:
             homepage_template = Template(file_.read())
         body = homepage_template.render()
