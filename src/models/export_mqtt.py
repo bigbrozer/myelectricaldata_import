@@ -397,7 +397,7 @@ class ExportMqtt:
         contract = self.db.get_contract(self.usage_point_id)
         max_value = 0
         if max_power_data:
-            if hasattr(contract, "subscribed_power"):
+            if getattr(contract, "subscribed_power", None):
                 max_value = int(contract.subscribed_power.split(" ")[0]) * 1000
             for data in max_power_data:
                 if data.event_date is not None:
@@ -407,12 +407,10 @@ class ExportMqtt:
                     mqtt_data[f"{sub_prefix}/event_hour"] = data.event_date.strftime("%H:%M:%S")
                     mqtt_data[f"{sub_prefix}/value"] = data.value
                     value_w = data.value
-                    if max_value != 0 and max_value >= value_w:
-                        mqtt_data[f"{sub_prefix}/threshold_exceeded"] = 0
-                    else:
-                        mqtt_data[f"{sub_prefix}/threshold_exceeded"] = 1
-                    threshold_usage = int(100 * value_w / max_value)
-                    mqtt_data[f"{sub_prefix}/percentage_usage"] = threshold_usage
+                    # Without subscribed power (no contract yet), the threshold is unknown: never flag it.
+                    mqtt_data[f"{sub_prefix}/threshold_exceeded"] = 1 if max_value and value_w > max_value else 0
+                    if max_value:
+                        mqtt_data[f"{sub_prefix}/percentage_usage"] = int(100 * value_w / max_value)
             self.mqtt.publish_multiple(mqtt_data)
             logging.info(" => OK")
         else:
