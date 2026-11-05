@@ -1218,37 +1218,30 @@ class Database:
             return current_data
 
     def get_detail(self, usage_point_id, begin, end, measurement_direction="consumption"):
-        # begin = datetime.combine(begin, datetime.min.time())
-        # end = datetime.combine(end, datetime.max.time())
-
-        delta = begin - begin
-
         result = {"missing_data": False, "date": {}, "count": 0}
-
-        for i in range(delta.days + 1):
-            query_result = self.get_detail_all(
-                usage_point_id=usage_point_id,
-                begin=begin,
-                end=end,
-                measurement_direction=measurement_direction,
-            )
-            time_delta = abs(int((begin - end).total_seconds() / 60))
-            total_internal = 0
+        query_result = self.get_detail_all(
+            usage_point_id=usage_point_id,
+            begin=begin,
+            end=end,
+            measurement_direction=measurement_direction,
+        )
+        time_delta = abs(int((begin - end).total_seconds() / 60))
+        total_internal = 0
+        for query in query_result:
+            total_internal = total_internal + query.interval
+        total_time = abs(total_internal - time_delta)
+        if total_time > 300:
+            logging.info(f" - {total_time}m absente du relevé.")
+            result["missing_data"] = True
+        else:
             for query in query_result:
-                total_internal = total_internal + query.interval
-            total_time = abs(total_internal - time_delta)
-            if total_time > 300:
-                logging.info(f" - {total_time}m absente du relevé.")
-                result["missing_data"] = True
-            else:
-                for query in query_result:
-                    result["date"][query.date] = {
-                        "value": query.value,
-                        "interval": query.interval,
-                        "measure_type": query.measure_type,
-                        "blacklist": query.blacklist,
-                    }
-            return result
+                result["date"][query.date] = {
+                    "value": query.value,
+                    "interval": query.interval,
+                    "measure_type": query.measure_type,
+                    "blacklist": query.blacklist,
+                }
+        return result
 
     def get_detail_state(self, usage_point_id, date, measurement_direction="consumption"):
         unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode("utf-8")).hexdigest()
