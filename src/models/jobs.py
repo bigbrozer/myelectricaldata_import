@@ -427,8 +427,8 @@ class Job:
             export_finish()
 
         try:
-            if "enable" in self.home_assistant_config and str2bool(self.home_assistant_config["enable"]):
-                if "enable" in self.mqtt_config and str2bool(self.mqtt_config["enable"]):
+            if self.home_assistant_config and str2bool(self.home_assistant_config.get("enable")):
+                if self.mqtt_config and str2bool(self.mqtt_config.get("enable")):
                     if self.usage_point_id is None:
                         for usage_point_config in self.usage_points:
                             if usage_point_config.enable:
@@ -477,13 +477,13 @@ class Job:
             if hasattr(usage_point_config, "production_detail") and usage_point_config.production_detail:
                 export_influxdb.detail(measurement_direction="production")
             tempo_config = self.config.tempo_config()
-            if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
+            if tempo_config and str2bool(tempo_config.get("enable")):
                 export_influxdb.tempo()
             export_influxdb.ecowatt()
             export_finish()
 
         try:
-            if "enable" in self.influxdb_config and self.influxdb_config["enable"]:
+            if self.influxdb_config and str2bool(self.influxdb_config.get("enable")):
                 if self.usage_point_id is None:
                     for usage_point_config in self.usage_points:
                         if usage_point_config.enable:
@@ -555,7 +555,7 @@ class Job:
             export_finish()
 
         try:
-            if "enable" in self.mqtt_config and self.mqtt_config["enable"]:
+            if self.mqtt_config and str2bool(self.mqtt_config.get("enable")):
                 if self.usage_point_id is None:
                     for usage_point_config in self.usage_points:
                         if usage_point_config.enable:
