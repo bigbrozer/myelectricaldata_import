@@ -127,7 +127,7 @@ class HomeAssistant:  # pylint: disable=R0902
             if hasattr(self.config_usage_point, key):
                 setattr(self.config, key, getattr(self.config_usage_point, key))
 
-        config_ha_config = CONFIG.home_assistant_config()
+        config_ha_config = CONFIG.home_assistant_config() or {}
         for key in self.config.__dict__:
             if key in config_ha_config:
                 setattr(self.config, key, config_ha_config[key])
@@ -699,7 +699,7 @@ class HomeAssistant:  # pylint: disable=R0902
         Returns:
             None
         """
-        tempo_days = DB.get_tempo_config("days")
+        tempo_days = DB.get_tempo_config("days") or {}
         for color, days in tempo_days.items():
             self.tempo_days_sensor(f"{color}", days)
 
@@ -746,8 +746,8 @@ class HomeAssistant:  # pylint: disable=R0902
         else:
             measure_type = "hp"
         current_price = None
-        if self.tempo_color.lower() in ["blue", "white", "red"]:
-            current_price = convert_price(tempo_price[f"{self.tempo_color.lower()}_{measure_type}"].replace(",", "."))
+        if self.tempo_color and self.tempo_color.lower() in ["blue", "white", "red"]:
+            current_price = convert_price(tempo_price[f"{self.tempo_color.lower()}_{measure_type}"])
         attributes = {
             "days_blue": f'{tempo_days["blue"]} / 300',
             "days_white": f'{tempo_days["white"]} / 43',
@@ -780,11 +780,11 @@ class HomeAssistant:  # pylint: disable=R0902
         Returns:
             None
         """
-        tempo_price = DB.get_tempo_config("price")
+        tempo_price = DB.get_tempo_config("price") or {}
         for color, price in tempo_price.items():
             self.tempo_price_sensor(
                 f"{color}",
-                float(price.replace(",", ".")),
+                convert_price(price),
                 f"{color.split('_')[0].capitalize()}{color.split('_')[1].capitalize()}",
             )
 
