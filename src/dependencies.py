@@ -49,8 +49,12 @@ def is_bool(v):
         bool: True if the value is a boolean, False otherwise.
 
     """
-    if v in ["true", "false", "yes, no", "t, f", "y, n", 1, 0]:
+    if isinstance(v, bool):
         return True
+    if isinstance(v, int):
+        return v in (0, 1)
+    if isinstance(v, str):
+        return v.strip().lower() in {"true", "false", "yes", "no", "t", "f", "y", "n", "1", "0"}
     return False
 
 
@@ -64,10 +68,11 @@ def str2bool(v):
         bool: The boolean value.
 
     """
-    if type(v) != bool:
-        return v and v.lower() in ("yes", "true", "t", "1")
-    else:
+    if isinstance(v, bool):
         return v
+    if v is None:
+        return False
+    return str(v).strip().lower() in ("yes", "true", "t", "1")
 
 
 def is_float(element):
