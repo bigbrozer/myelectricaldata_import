@@ -1,4 +1,4 @@
-import ast
+import json
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Path, Request
@@ -35,7 +35,8 @@ def tempo():
 
 @ROUTER.put("/ecowatt", include_in_schema=False)
 @ROUTER.put("/ecowatt/", include_in_schema=False)
-def ecowatt():
+def put_ecowatt():
+    """Force la récupération des données Ecowatt."""
     return Ajax().fetch_ecowatt()
 
 
@@ -56,7 +57,7 @@ def fetch_price(usage_point_id: str = Path(..., description=DOCUMENTATION["usage
     """Mise à jour le cache local du comparateur d'abonnement."""
     usage_point_id = usage_point_id.strip()
     if DB.get_usage_point(usage_point_id) is not None:
-        return ast.literal_eval(Ajax(usage_point_id).generate_price())
+        return json.loads(Ajax(usage_point_id).generate_price())
     else:
         raise HTTPException(
             status_code=404,
