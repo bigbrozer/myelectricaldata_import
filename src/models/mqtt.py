@@ -70,6 +70,6 @@ class Mqtt:
                     {"topic": f"{prefix}/{topics}", "payload": value, "qos": self.qos, "retain": self.retain}
                 )
             auth = None
-            if self.username is not None and self.password is not None:
+            if self.username and self.password:
                 auth = {"username": self.username, "password": self.password}
             publish.multiple(payload, hostname=self.hostname, port=self.port, client_id=self.client_id, auth=auth)
