@@ -46,7 +46,7 @@ else:
 
 if not Path(CONFIG_PATH).exists():
     logging.critical(f"Config file is not found ({CONFIG_PATH})")
-    sys.exit()
+    sys.exit(1)
 
 
 class EndpointFilter(logging.Filter):
@@ -69,7 +69,10 @@ class EndpointFilter(logging.Filter):
 uvicorn_logger = logging.getLogger("uvicorn.access")
 uvicorn_logger.addFilter(EndpointFilter(path="/import_status"))
 
-locale.setlocale(locale.LC_ALL, "fr_FR.UTF-8")
+try:
+    locale.setlocale(locale.LC_ALL, "fr_FR.UTF-8")
+except locale.Error:
+    logging.warning("Locale fr_FR.UTF-8 indisponible, utilisation de la locale par défaut.")
 
 MINIMUN_CYCLE = cycle_minimun
 
