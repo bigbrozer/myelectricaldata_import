@@ -344,7 +344,11 @@ class Job:
 
         def run(usage_point_config):
             usage_point_id = usage_point_config.usage_point_id
-            title(f"[{self.usage_point_id}] {detail} :")
+            title(f"[{usage_point_id}] {detail} :")
+            # Unset (None) means enabled: the column defaults to True.
+            if getattr(usage_point_config, "consumption_max_power", None) is False:
+                logging.info(f"{detail} désactivée sur le point de livraison")
+                return
             Power(headers=self.header_generate(), usage_point_id=usage_point_id).get()
             export_finish()
 
