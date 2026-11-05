@@ -1,5 +1,4 @@
 import logging
-from json import JSONDecodeError
 
 import pytest
 
@@ -17,23 +16,16 @@ def test_get_gateway_status(caplog, requests_mock, response, status_code, usage_
 
     ajax = Ajax(usage_point_id=usage_point_id) if usage_point_id else Ajax()
 
-    # FIXME: In case the status_code is 200 and the response is not a valid json, an exception is raised
-    if status_code == 200 and not response:
-        with pytest.raises(JSONDecodeError):
-            ajax.gateway_status()
+    # An invalid (non JSON) response must not raise anymore.
+    res = ajax.gateway_status()
+    if status_code != 200 or not response:
+        assert res == {'information': 'MyElectricalData injoignable.',
+                       'status': False,
+                       'version': get_version()}
+        if status_code == 200:
+            assert "Réponse invalide de MyElectricalData" in caplog.text
     else:
-        res = ajax.gateway_status()
-        if status_code != 200:
-            assert res == {'information': 'MyElectricalData injoignable.',
-                           'status': False,
-                           'version': get_version()}
-            # FIXME: No error is logged
-            assert (
-                    "ERROR    root:jobs.py:170 Erreur lors de la récupération du statut de la passerelle :\n"
-                    not in caplog.text
-            )
-        else:
-            assert res == {'mock': 'response', 'version': get_version()}
+        assert res == {'mock': 'response', 'version': get_version()}
 
     if usage_point_id:
         assert contains_logline(caplog, f"[{usage_point_id.upper()}] CHECK DE L'ÉTAT DE LA PASSERELLE.", logging.INFO)

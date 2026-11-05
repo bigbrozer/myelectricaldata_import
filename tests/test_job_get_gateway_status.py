@@ -19,8 +19,7 @@ def test_get_gateway_status(job, caplog, requests_mock, response, status_code):
     # if status_code != 200:
     #     assert contains_logline(caplog, "Erreur lors de la récupération du statut de la passerelle :", logging.ERROR)
 
-    if status_code == 200:
-        if response:
-            assert not contains_logline(caplog, "Erreur lors de la récupération du statut de la passerelle :", logging.ERROR)
-        else:
-            assert contains_logline(caplog, "Erreur lors de la récupération du statut de la passerelle :", logging.ERROR)
+    # The gateway status never makes the job fail anymore: invalid responses are logged by Status.ping().
+    assert not contains_logline(caplog, "Erreur lors de la récupération du statut de la passerelle :", logging.ERROR)
+    if status_code == 200 and not response:
+        assert "Réponse invalide de MyElectricalData" in caplog.text

@@ -7,7 +7,7 @@ from os import environ, getenv
 from config import URL
 from dependencies import get_version
 from init import DB
-from models.query import Query
+from models.query import GATEWAY_UNREACHABLE, Query
 
 
 class Status:
@@ -25,15 +25,15 @@ class Status:
         }
         try:
             response = Query(endpoint=target, headers=self.headers).get()
-            if hasattr(response, "status_code") and response.status_code == 200:
-                status = json.loads(response.text)
-                for key, value in status.items():
+            if response is not None and response.status_code == 200:
+                gateway_status = json.loads(response.text)
+                for key, value in gateway_status.items():
                     logging.info(f"{key}: {value}")
-                status["version"] = get_version()
-                return status
-            else:
-                return status
-        except LookupError:
+                gateway_status["version"] = get_version()
+                return gateway_status
+            return status
+        except (LookupError, ValueError, AttributeError) as e:
+            logging.error(f"Réponse invalide de MyElectricalData : {e}")
             return status
 
     def status(self, usage_point_id):
@@ -42,8 +42,16 @@ class Status:
         if hasattr(usage_point_id_config, "cache") and usage_point_id_config.cache:
             target += "/cache"
         response = Query(endpoint=target, headers=self.headers).get()
-        if response:
+        if response is None:
+            logging.error(GATEWAY_UNREACHABLE)
+            return {"error": True, "status_code": 500, "description": {"detail": GATEWAY_UNREACHABLE}}
+        try:
             status = json.loads(response.text)
+        except ValueError:
+            status = {"detail": response.text}
+        if not isinstance(status, dict) or ("detail" not in status and not response.ok):
+            status = {"detail": str(status)}
+        if response.ok:
             if response.status_code == 200:
                 try:
                     for key, value in status.items():
@@ -72,13 +80,14 @@ class Status:
             else:
                 if "DEBUG" in environ and getenv("DEBUG"):
                     traceback.print_exc()
-                logging.error(status["detail"])
-                return {"error": True, "description": status["detail"]}
+                detail = status.get("detail", "Erreur lors de la récupération du statut du compte.")
+                logging.error(detail)
+                return {"error": True, "description": detail}
         else:
             if "DEBUG" in environ and getenv("DEBUG"):
                 traceback.print_exc()
             return {
                 "error": True,
                 "status_code": response.status_code,
-                "description": json.loads(response.text),
+                "description": status,
             }

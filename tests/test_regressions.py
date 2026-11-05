@@ -37,6 +37,17 @@ def test_query_masks_authorization_header():
     assert query._safe_headers() == {"Authorization": "** hidden **", "version": "1"}
 
 
+def test_status_network_error_has_job_compatible_shape(mocker):
+    from models.query_status import Status
+
+    mocker.patch("models.query.Query.get", return_value=None)
+    status = Status().status("pdl1")
+
+    assert status["error"] is True
+    assert status["status_code"] == 500
+    assert status["description"]["detail"] == "MyElectricalData injoignable."
+
+
 YAML = """cycle: 3600
 # comment
 foo_cycle: 1
