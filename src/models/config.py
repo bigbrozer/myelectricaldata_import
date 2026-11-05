@@ -137,6 +137,8 @@ class Config:
         lost_params = []
         # CHECK HOME ASSISTANT CONFIGURATION
         config_name = "home_assistant"
+        if not isinstance(self.config.get(config_name), dict):
+            self.config[config_name] = {}
         for key, data in self.default[config_name].items():
             mandatory = False
             if key in self.mandatory_parameters:
@@ -230,13 +232,52 @@ class Config:
         """
         title(f"Switch {path} to {value}")
         with Path(self.path_file).open(mode="r+", encoding="utf-8") as file:
-            text = file.read()
-            text = re.sub(rf"(?<={path}: ).*", str(value).lower(), text)
+            text = self._replace_yaml_value(file.read(), path.split("."), str(value).lower())
             file.seek(0)
             file.write(text)
             file.truncate()
         self.config = yaml.safe_load(text)
         self.db.set_config(path, value)
+
+    @staticmethod
+    def _replace_yaml_value(text, keys, value):
+        """Replace the value of a (possibly nested, dot separated) key in a YAML text, keeping comments.
+
+        Only the exact key inside the expected parent section is replaced. If the key is missing at the top level,
+        it is appended to the file.
+        """
+        lines = text.splitlines(keepends=True)
+        start, end, parent_indent = 0, len(lines), -1
+        for depth, key in enumerate(keys):
+            last = depth == len(keys) - 1
+            pattern = re.compile(rf"^(\s*){re.escape(key)}:(\s.*)?$")
+            found = None
+            for idx in range(start, end):
+                stripped = lines[idx].strip()
+                if not stripped or stripped.startswith("#"):
+                    continue
+                indent = len(lines[idx]) - len(lines[idx].lstrip())
+                if indent <= parent_indent:
+                    end = idx
+                    break
+                match = pattern.match(lines[idx].rstrip("\r\n"))
+                if match and (parent_indent >= 0 or indent == 0):
+                    found = (idx, indent, match.group(1))
+                    break
+            if found is None:
+                if depth == 0:
+                    if text and not text.endswith("\n"):
+                        text += "\n"
+                    return text + f"{keys[0]}: {value}\n" if last else text
+                return text
+            idx, indent, prefix = found
+            if last:
+                newline = "\n" if lines[idx].endswith("\n") else ""
+                lines[idx] = f"{prefix}{key}: {value}{newline}"
+                return "".join(lines)
+            start, parent_indent = idx + 1, indent
+            end = len(lines)
+        return text
 
     def tempo_config(self):
         """Return the configuration for tempo.
@@ -317,7 +358,7 @@ class Config:
         Returns:
             dict: A dictionary containing the usage points.
         """
-        return self.config["myelectricaldata"]
+        return self.config.get("myelectricaldata")
 
     def set_usage_point_config(self, usage_point_id, key, value):
         """Set the configuration for a specific usage point.
