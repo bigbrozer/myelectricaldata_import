@@ -416,7 +416,7 @@ class HomeAssistant:  # pylint: disable=R0902
         if measurement_direction == "consumption":
             daily_cost = 0
             plan = DB.get_usage_point_plan(self.usage_point_id).upper()
-            if plan in ("HC/HP", "HC/HP"):
+            if plan in ("HC/HP", "HP/HC"):
                 for i in range(7):
                     hp = stats.detail(i, "HP")["value"]
                     hc = stats.detail(i, "HC")["value"]
@@ -429,8 +429,7 @@ class HomeAssistant:  # pylint: disable=R0902
                     value = cost_hp + cost_hc
                     if i == 0:
                         daily_cost = value
-                    elif i == 1:
-                        yesterday_hp_value_cost = convert_kw_to_euro(hp, self.config.consumption_price_hp)
+                        yesterday_hp_value_cost = cost_hp
                     dailyweek_cost.append(round(value, 1))
             elif plan == "TEMPO":
                 tempo_config = DB.get_tempo_config("price")
@@ -467,7 +466,6 @@ class HomeAssistant:  # pylint: disable=R0902
                     value = cost_hp + cost_hc
                     if i == 0:
                         daily_cost = value
-                    elif i == 1:
                         yesterday_hp_value_cost = cost_hp
                     dailyweek_cost.append(round(value, 1))
             else:
@@ -483,7 +481,6 @@ class HomeAssistant:  # pylint: disable=R0902
                     )
                     if i == 0:
                         daily_cost = convert_kw_to_euro(stats.daily(0)["value"], self.config.consumption_price_base)
-                    elif i == 1:
                         yesterday_hp_value_cost = convert_kw_to_euro(hour_hp, self.config.consumption_price_base)
         else:
             daily_cost = convert_kw_to_euro(stats.daily(0)["value"], self.config.production_price)
