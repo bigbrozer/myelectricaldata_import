@@ -475,6 +475,8 @@ class Ajax:
         end_index = start_index + length
         order_column = int(args.get("order[0][column]"))
         order_dir = args.get("order[0][dir]")
+        if order_dir not in ("asc", "desc"):
+            order_dir = "asc"
         all_data = []
         data = []
         if measurement_direction == "consumption":
@@ -488,13 +490,13 @@ class Ajax:
                 3: "value",
                 4: "value",
                 5: "fail_count",
-                6: "cache",
-                7: "import_clean",
+                6: "date",
+                7: "date",
                 8: "blacklist",
             }
             all_data = self.db.get_daily_datatable(
                 usage_point_id=self.usage_point_id,
-                order_column=col_spec[order_column],
+                order_column=col_spec.get(order_column, "date"),
                 order_dir=order_dir,
                 search=search,
                 measurement_direction="consumption",
@@ -511,13 +513,13 @@ class Ajax:
                 2: "value",
                 3: "value",
                 4: "fail_count",
-                5: "cache",
-                6: "import_clean",
+                5: "date",
+                6: "date",
                 7: "blacklist",
             }
             all_data = self.db.get_detail_datatable(
                 usage_point_id=self.usage_point_id,
-                order_column=col_spec[order_column],
+                order_column=col_spec.get(order_column, "date"),
                 order_dir=order_dir,
                 search=search,
                 measurement_direction="consumption",
@@ -533,13 +535,13 @@ class Ajax:
                 1: "value",
                 2: "value",
                 3: "fail_count",
-                4: "cache",
-                5: "import_clean",
+                4: "date",
+                5: "date",
                 6: "blacklist",
             }
             all_data = self.db.get_daily_datatable(
                 usage_point_id=self.usage_point_id,
-                order_column=col_spec[order_column],
+                order_column=col_spec.get(order_column, "date"),
                 order_dir=order_dir,
                 search=search,
                 measurement_direction="production",
@@ -555,13 +557,13 @@ class Ajax:
                 2: "value",
                 3: "value",
                 4: "fail_count",
-                5: "cache",
-                6: "import_clean",
+                5: "date",
+                6: "date",
                 7: "blacklist",
             }
             all_data = self.db.get_detail_datatable(
                 usage_point_id=self.usage_point_id,
-                order_column=col_spec[order_column],
+                order_column=col_spec.get(order_column, "date"),
                 order_dir=order_dir,
                 search=search,
                 measurement_direction="production",
@@ -576,13 +578,13 @@ class Ajax:
                 3: "value",
                 4: "value",
                 5: "fail_count",
-                6: "cache",
-                7: "import_clean",
+                6: "date",
+                7: "date",
                 8: "blacklist",
             }
             all_data = self.db.get_daily_max_power_datatable(
                 usage_point_id=self.usage_point_id,
-                order_column=col_spec[order_column],
+                order_column=col_spec.get(order_column, "date"),
                 order_dir=order_dir,
                 search=search,
             )
@@ -641,7 +643,7 @@ class Ajax:
         index = 0
         result = []
         for db_data in all_data:
-            if start_index <= index <= end_index:
+            if start_index <= index < end_index:
                 date_text = db_data.date.strftime(self.date_format)
                 target = "daily"
                 # VALUE
@@ -718,7 +720,7 @@ class Ajax:
         index = 0
         result = []
         for db_data in all_data:
-            if start_index <= index <= end_index:
+            if start_index <= index < end_index:
                 # print(db_data)
                 date_text = db_data.date.strftime(self.date_format)
                 date_hour = db_data.date.strftime("%H:%M:%S")
@@ -762,7 +764,7 @@ class Ajax:
         else:
             max_power = 999000
         for db_data in all_data:
-            if start_index <= index <= end_index:
+            if start_index <= index < end_index:
                 date_text = db_data.date.strftime(self.date_format)
                 ampere = f"{round(int(db_data.value) / 230, 2)}"
                 if isinstance(db_data.event_date, datetime):
