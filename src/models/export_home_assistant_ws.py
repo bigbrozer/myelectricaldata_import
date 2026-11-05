@@ -289,7 +289,7 @@ class HomeAssistantWs:
                         logging.error(f"Plan {plan} inconnu.")
                         continue
 
-                    date = TZ_PARIS.localize(data.date, "%Y-%m-%d %H:%M:%S").replace(minute=0, second=0, microsecond=0)
+                    date = TZ_PARIS.localize(data.date).replace(minute=0, second=0, microsecond=0)
                     key = date.strftime("%Y-%m-%d %H:%M:%S")
 
                     # KWH
@@ -456,7 +456,7 @@ class HomeAssistantWs:
                     statistic_id = f"myelectricaldata:{self.usage_point_id}_{measurement_direction}"
                     value = data.value / (60 / data.interval)
                     cost = value * self.usage_point_id_config.production_price / 1000
-                    date = TZ_PARIS.localize(data.date, "%Y-%m-%d %H:%M:%S").replace(minute=0, second=0, microsecond=0)
+                    date = TZ_PARIS.localize(data.date).replace(minute=0, second=0, microsecond=0)
                     key = date.strftime("%Y-%m-%d %H:%M:%S")
 
                     # KWH
