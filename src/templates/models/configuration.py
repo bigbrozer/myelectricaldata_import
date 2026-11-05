@@ -319,7 +319,7 @@ class Configuration:
                         if "help" in data:
                             configuration += f"""
                                     <td><i class="material-icons help" alt="{data["help"]}">help_outline</i></td>"""
-                        configuration += f"</tr>"
+                        configuration += "</tr>"
                     elif type(var_type) == str or type(var_type) == float:
                         configuration += f"""
                                 <tr>
@@ -328,7 +328,7 @@ class Configuration:
                         if "help" in data:
                             configuration += f"""
                                     <td><i class="material-icons help" alt="{data["help"]}">help_outline</i></td>"""
-                        configuration += f"</tr>"
+                        configuration += "</tr>"
                     elif type(var_type) == list:
                         configuration += f'<tr><td class="key">{title}</td><td class="value"><select id="configuration_{key}" name="{key}">'
                         selected = ""
@@ -336,11 +336,11 @@ class Configuration:
                             if option == default:
                                 selected = "selected"
                             configuration += f'<option value="{option}" {selected}>{option.upper()}</option>'
-                        configuration += f"</select></td>"
+                        configuration += "</select></td>"
                         if "help" in data:
                             configuration += f"""
                                     <td><i class="material-icons help" alt="{data["help"]}">help_outline</i></td>"""
-                        configuration += f"</tr>"
+                        configuration += "</tr>"
                     elif isinstance(var_type, datetime.datetime):
                         configuration += f"""
                         <tr>

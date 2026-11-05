@@ -10,9 +10,6 @@ from init import CONFIG, DB
 
 utc = pytz.UTC
 
-now_date = datetime.now(timezone.utc)
-yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
-
 
 class Stat:  # pylint: disable=R0902,R0904
     """The 'Stat' class represents a statistical analysis tool for a usage point.
@@ -682,7 +679,6 @@ class Stat:  # pylint: disable=R0902,R0904
         }
 
     def get_week(self, year, month=None, measure_type=None):
-        now_date = datetime.now(timezone.utc)
         if month is None:
             month = int(datetime.now().strftime("%m"))
         # adapt for day in leap-year

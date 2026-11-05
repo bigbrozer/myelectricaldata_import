@@ -102,7 +102,7 @@ def get_data_daily(
     if measurement_direction not in ["consumption", "production"]:
         raise HTTPException(
             status_code=404,
-            detail=f"'measurement_direction' inconnu, valeur possible consumption/production",
+            detail="'measurement_direction' inconnu, valeur possible consumption/production",
         )
     data = DB.get_daily_range(usage_point_id, begin, end, measurement_direction)
     output = {"unit": "w", "data": {}}
@@ -132,7 +132,7 @@ def get_data_detail(
     if measurement_direction not in ["consumption", "production"]:
         raise HTTPException(
             status_code=404,
-            detail=f"'measurement_direction' inconnu, valeur possible consumption/production",
+            detail="'measurement_direction' inconnu, valeur possible consumption/production",
         )
     data = DB.get_detail_range(usage_point_id, begin, end, measurement_direction)
     output = {"unit": "w", "data": {}}

@@ -5,7 +5,6 @@ import re
 import traceback
 
 from config import URL
-from dependencies import title
 from init import DB
 from models.query import Query, error_detail
 

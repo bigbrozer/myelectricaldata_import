@@ -3,7 +3,6 @@ import logging
 import traceback
 
 from config import URL
-from dependencies import title
 from init import CONFIG, DB
 from models.query import Query, error_detail
 

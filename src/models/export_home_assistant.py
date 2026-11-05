@@ -220,9 +220,9 @@ class HomeAssistant:  # pylint: disable=R0902
         uniq_id = f"myelectricaldata_linky_{self.usage_point_id}_{measurement_direction}_last{days}day"
         end = datetime.combine(datetime.now(tz=UTC) - timedelta(days=1), datetime.max.time())
         begin = datetime.combine(end - timedelta(days), datetime.min.time())
-        range = DB.get_detail_range(self.usage_point_id, begin, end, measurement_direction)
+        rows = DB.get_detail_range(self.usage_point_id, begin, end, measurement_direction)
         attributes = {"time": [], measurement_direction: []}
-        for data in range:
+        for data in rows:
             attributes["time"].append(data.date.strftime("%Y-%m-%d %H:%M:%S"))
             attributes[measurement_direction].append(data.value)
         self.sensor(

@@ -1,7 +1,7 @@
 import logging
 import time
 import traceback
-from os import environ, getenv
+from os import getenv
 
 from dependencies import export_finish, finish, get_version, log_usage_point_id, str2bool, title
 from init import CONFIG, DB
@@ -366,11 +366,11 @@ class Job:
 
     def get_tempo(self):
         try:
-            title(f"Récupération des données Tempo :")
+            title("Récupération des données Tempo :")
             Tempo().fetch()
-            title(f"Calcul des jours Tempo :")
+            title("Calcul des jours Tempo :")
             Tempo().calc_day()
-            title(f"Récupération des tarifs Tempo :")
+            title("Récupération des tarifs Tempo :")
             Tempo().fetch_price()
             export_finish()
         except Exception as e:
@@ -380,7 +380,7 @@ class Job:
 
     def get_ecowatt(self):
         try:
-            title(f"Récupération des données EcoWatt :")
+            title("Récupération des données EcoWatt :")
             Ecowatt().fetch()
             export_finish()
         except Exception as e:

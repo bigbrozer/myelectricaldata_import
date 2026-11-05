@@ -3,8 +3,6 @@ import logging
 import sys
 
 import influxdb_client
-from dateutil.tz import tzlocal
-from influxdb_client.client.util.date_utils import DateHelper
 from influxdb_client.client.write_api import ASYNCHRONOUS, SYNCHRONOUS
 
 from dependencies import separator, separator_warning, title

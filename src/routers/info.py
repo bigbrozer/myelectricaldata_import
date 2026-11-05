@@ -4,7 +4,7 @@ from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
-from init import CONFIG, DB
+from init import DB
 from models.ajax import Ajax
 
 ROUTER = APIRouter(tags=["Infos"])

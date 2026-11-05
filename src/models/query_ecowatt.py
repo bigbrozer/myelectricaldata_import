@@ -62,7 +62,7 @@ class Ecowatt:
         result = {}
         if not current_cache:
             # No cache
-            title(f"No cache")
+            title("No cache")
             result = self.run()
         else:
             last_item = current_cache[0]

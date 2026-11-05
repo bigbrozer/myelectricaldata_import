@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 
 from dateutil.relativedelta import relativedelta
 
-from dependencies import title
 from init import CONFIG, DB, MQTT
 from models.stat import Stat
 
@@ -80,7 +79,7 @@ class ExportMqtt:
             logging.info(" => ERREUR")
 
     def address(self):
-        logging.info(f"Génération des messages d'addresse")
+        logging.info("Génération des messages d'addresse")
         address_data = self.db.get_addresse(self.usage_point_id)
         if hasattr(address_data, "__table__"):
             output = {}
@@ -458,11 +457,11 @@ class ExportMqtt:
         today = datetime.combine(datetime.now(), datetime.min.time())
         tempo_color = self.db.get_tempo_range(today, today)
         if tempo_color:
-            mqtt_data[f"tempo/color/today"] = tempo_color[0].color
+            mqtt_data["tempo/color/today"] = tempo_color[0].color
         tomorrow = today + timedelta(days=1)
         tempo_color = self.db.get_tempo_range(tomorrow, tomorrow)
         if tempo_color:
-            mqtt_data[f"tempo/color/tomorrow"] = tempo_color[0].color
+            mqtt_data["tempo/color/tomorrow"] = tempo_color[0].color
         if tempo_data:
             try:
                 tempo_stats = json.loads(tempo_data[0].value)

@@ -4,7 +4,6 @@ from datetime import datetime
 
 import pytz
 
-from dependencies import title
 from init import DB, INFLUXDB
 from models.stat import Stat
 
@@ -78,11 +77,11 @@ class ExportInfluxDB:
                         },
                     )
                     current_month = date.strftime("%m")
-                logging.info(f" => OK")
+                logging.info(" => OK")
             else:
                 logging.info(f" => Données synchronisées ({count} valeurs)")
         else:
-            logging.info(f" => Aucune donnée")
+            logging.info(" => Aucune donnée")
 
     def detail(self, measurement_direction="consumption"):
         current_month = ""
@@ -150,11 +149,11 @@ class ExportInfluxDB:
                         },
                     )
                     current_month = date.strftime("%m")
-                logging.info(f" => OK")
+                logging.info(" => OK")
             else:
                 logging.info(f" => Données synchronisées ({count} valeurs)")
         else:
-            logging.info(f" => Aucune donnée")
+            logging.info(" => Aucune donnée")
 
     def tempo(self):
         measurement = "tempo"
@@ -176,7 +175,7 @@ class ExportInfluxDB:
 
     def ecowatt(self):
         measurement = "ecowatt"
-        logging.info(f'Envoi des données "ECOWATT" dans influxdb')
+        logging.info('Envoi des données "ECOWATT" dans influxdb')
         ecowatt_data = self.db.get_ecowatt()
         if ecowatt_data:
             for data in ecowatt_data:

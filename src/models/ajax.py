@@ -61,19 +61,19 @@ class Ajax:
         return data
 
     def fetch_tempo(self):
-        title(f"Récupération des jours Tempo.")
+        title("Récupération des jours Tempo.")
         return Tempo().fetch()
 
     def get_tempo(self):
-        title(f"Affichage des jours Tempo.")
+        title("Affichage des jours Tempo.")
         return Tempo().get()
 
     def fetch_ecowatt(self):
-        title(f"Récupération des jours Ecowatt.")
+        title("Récupération des jours Ecowatt.")
         return Ecowatt().fetch()
 
     def get_ecowatt(self):
-        title(f"Affichage des jours Ecowatt.")
+        title("Affichage des jours Ecowatt.")
         return Ecowatt().get()
 
     def generate_price(self):

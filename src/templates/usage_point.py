@@ -629,7 +629,7 @@ class UsagePoint:
                 else:
                     offpeak_hours += f"<td>{contract_offpeak_hours}</td>"
             else:
-                offpeak_hours += f"<td>Pas de données.</td>"
+                offpeak_hours += "<td>Pas de données.</td>"
             day = day + 1
         offpeak_hours += "</tr></table>"
         return offpeak_hours
@@ -884,7 +884,6 @@ class UsagePoint:
                     <td>Base</td>
                     <td>HP/HC</td>
             """
-            tempo_config = self.config.tempo_config()
             html += "<td>Tempo</td>"
             html += "</tr>"
             if data:
@@ -892,7 +891,6 @@ class UsagePoint:
                 for years, value in data_value.items():
                     price_base = round(value["BASE"]["euro"], 2)
                     price_hchp = round(value["HC"]["euro"] + value["HP"]["euro"], 2)
-                    tempo_config = self.config.tempo_config()
                     price_tempo = None
                     value_tempo = 0
                     for color, tempo in value["TEMPO"].items():

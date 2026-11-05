@@ -63,7 +63,7 @@ class Tempo:
         result = {}
         if not current_cache:
             # No cache
-            title(f"No cache")
+            title("No cache")
             result = self.run()
         else:
             valid_date = self.valid_date
