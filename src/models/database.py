@@ -30,7 +30,7 @@ from db_schema import (
     TempoConfig,
     UsagePoints,
 )
-from dependencies import APPLICATION_PATH, APPLICATION_PATH_DATA, get_version, str2bool, title, title_warning
+from dependencies import APPLICATION_PATH, APPLICATION_PATH_DATA, get_version, str2bool, title
 
 # available_database = ["sqlite", "postgresql", "mysql+pymysql"]
 available_database = ["sqlite", "postgresql"]
@@ -75,11 +75,6 @@ class Database:
 
         self.lock_file = f"{self.path}/.lock"
 
-        # MIGRATE v7 to v8
-        if os.path.isfile(f"{self.path}/enedisgateway.db"):
-            title_warning("=> Migration de l'ancienne base de données vers la nouvelle structure.")
-            self.migratev7tov8()
-
     def migrate(self):
         """Apply the Alembic migrations (in-process, the URI never reaches a shell or the process list)."""
         alembic_config = AlembicConfig(os.path.join(APPLICATION_PATH, "alembic.ini"))
@@ -88,76 +83,6 @@ class Database:
         alembic_config.attributes["configure_logger"] = False
         os.environ["DB_URL"] = self.uri
         alembic_command.upgrade(alembic_config, "head")
-
-    def migratev7tov8(self):
-        """Migrates the database from version 7 to version 8."""
-        uri = f"sqlite:///{self.path}/enedisgateway.db"
-        engine = create_engine(uri, echo=True, query_cache_size=0)
-        session = scoped_session(sessionmaker(engine, autocommit=True, autoflush=True))
-
-        for measurement_direction in ["consumption", "production"]:
-            logging.warning(f'Migration des "{measurement_direction}_daily"')
-            if measurement_direction == "consumption":
-                table = ConsumptionDaily
-            else:
-                table = ProductionDaily
-            daily_data = session.execute(f"select * from {measurement_direction}_daily order by date").all()
-            current_date = ""
-            year_value = 0
-            bulk_insert = []
-            for daily in daily_data:
-                usage_point_id = daily[0]
-                date = datetime.strptime(daily[1], "%Y-%m-%d")
-                value = daily[2]
-                year_value = year_value + value
-                bulk_insert.append(
-                    table(
-                        usage_point_id=usage_point_id,
-                        date=date,
-                        value=value,
-                        blacklist=0,
-                        fail_count=0,
-                    )
-                )
-                if current_date != date.strftime("%Y"):
-                    logging.warning(f" - {date.strftime('%Y')} => {round(year_value / 1000, 2)}kW")
-                    current_date = date.strftime("%Y")
-                    year_value = 0
-            self.session.add_all(bulk_insert)
-
-            logging.warning(f'Migration des "{measurement_direction}_detail"')
-            if measurement_direction == "consumption":
-                table = ConsumptionDetail
-            else:
-                table = ProductionDetail
-            detail_data = session.execute(f"select * from {measurement_direction}_detail order by date").all()
-            current_date = ""
-            day_value = 0
-            bulk_insert = []
-            for detail in detail_data:
-                usage_point_id = detail[0]
-                date = datetime.strptime(detail[1], "%Y-%m-%d %H:%M:%S") - timedelta(minutes=30)
-                value = detail[2]
-                interval = detail[3]
-                measure_type = detail[4]
-                day_value = day_value + value / (60 / interval)
-                bulk_insert.append(
-                    table(
-                        usage_point_id=usage_point_id,
-                        date=date,
-                        value=value,
-                        interval=interval,
-                        measure_type=measure_type,
-                        blacklist=0,
-                        fail_count=0,
-                    )
-                )
-                if current_date != date.strftime("%m"):
-                    logging.warning(f" - {date.strftime('%Y-%m')} => {round(day_value / 1000, 2)}kW")
-                    current_date = date.strftime("%m")
-                    day_value = 0
-            self.session.add_all(bulk_insert)
-        os.replace(f"{self.path}/enedisgateway.db", f"{self.path}/enedisgateway.db.migrate")
 
     def init_database(self):
         """Initialize the database with default values."""
