@@ -73,16 +73,10 @@ class Detail:
         end_str = end.strftime(self.date_format)
         logging.info(f"Récupération des données : {begin_str} => {end_str}")
         endpoint = f"{self.measure_type}_load_curve/{self.usage_point_id}/start/{begin_str}/end/{end_str}"
-        # if begin <= (datetime.now() - timedelta(days=8)):
         if hasattr(self.usage_point_config, "cache") and self.usage_point_config.cache:
             endpoint += "/cache"
         try:
             current_data = self.db.get_detail(self.usage_point_id, begin, end, self.measure_type)
-            # current_week = datetime.now() - timedelta(days=self.max_detail + 1)
-            # last_week = False
-            # if current_week <= begin:
-            #     last_week = True
-            # if not current_data["missing_data"] and not last_week:
             if not current_data["missing_data"]:
                 logging.info(" => Toutes les données sont déjà en cache.")
                 output = []

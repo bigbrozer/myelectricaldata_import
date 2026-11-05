@@ -1257,22 +1257,6 @@ class Database:
         else:
             return True
 
-    # def insert_detail_bulk(self, data, mesure_type="consumption"):
-    #     if mesure_type == "consumption":
-    #         table = ConsumptionDetail
-    #     else:
-    #         table = ProductionDetail
-    #     begin = ""
-    #     end = ""
-    #     for scalar in data:
-    #         if begin == "":
-    #             begin = scalar.date
-    #         end = scalar.date
-    #     self.session.execute(
-    #         table.__table__.delete().filter(ConsumptionDetail.date.between(begin, end))
-    #     )
-    #     self.session.add_all(data)
-
     def insert_detail(
         self,
         usage_point_id,

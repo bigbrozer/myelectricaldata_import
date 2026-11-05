@@ -214,7 +214,6 @@ class Stat:  # pylint: disable=R0902,R0904
             "red_hp": 0,
         }
         for data in self.db.get_detail_range(self.usage_point_id, begin, end, self.measurement_direction):
-            # print(data)
             hour = int(datetime.strftime(data.date, "%H"))
             if hour < 6:
                 color = self.db.get_tempo_range(begin - timedelta(days=1), end - timedelta(days=1))[0].color
@@ -253,9 +252,7 @@ class Stat:  # pylint: disable=R0902,R0904
         begin = datetime.combine(yesterday_date - timedelta(days=index), datetime.min.time())
         end = datetime.combine(begin, datetime.max.time())
         value = 0
-        # print(self.db.get_daily_max_power_range(self.usage_point_id, begin, end))
         for data in self.db.get_daily_max_power_range(self.usage_point_id, begin, end):
-            # print(data)
             value = value + data.value
         return {
             "value": value,
@@ -292,9 +289,7 @@ class Stat:  # pylint: disable=R0902,R0904
         begin = datetime.combine(yesterday_date - timedelta(days=index), datetime.min.time())
         end = datetime.combine(begin, datetime.max.time())
         max_power_time = ""
-        # print(self.db.get_daily_max_power_range(self.usage_point_id, begin, end))
         for data in self.db.get_daily_max_power_range(self.usage_point_id, begin, end):
-            # print(data)
             if data.event_date is None or data.event_date == "":
                 max_power_time = data.date
             else:
@@ -343,32 +338,11 @@ class Stat:  # pylint: disable=R0902,R0904
             "end": end.strftime(self.date_format),
         }
 
-    # def get_week(self, year):
-    #     logging.debug(f"[{year}] current_week")
-    #     begin = datetime.combine(now_date - relativedelta(weeks=1), datetime.min.time())
-    #     end = datetime.combine(yesterday_date, datetime.max.time())
-    #     for data in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
-    #         self.value_current_week = self.value_current_week + data.value
-    #     logging.debug(f" {self.value_current_week}")
-    #     return {
-    #         "value": self.value_current_week,
-    #         "begin": begin.strftime(self.date_format),
-    #         "end": end.strftime(self.date_format)
-    #     }
-
     def last_week(self):
         now_date = datetime.now(timezone.utc)
         yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
         begin = datetime.combine(now_date - relativedelta(weeks=2), datetime.min.time())
         end = datetime.combine(yesterday_date - relativedelta(weeks=1), datetime.max.time())
-        # while day_idx < 7:
-        #     day = self.db.get_daily_range(self.usage_point_id, begin, end, self.self.measurement_direction)
-        #     if day:
-        #         for data in day:
-        #             last_week = last_week + data.value
-        #     begin = begin - timedelta(days=1)
-        #     end = end - timedelta(days=1)
-        #     day_idx = day_idx + 1
         for data in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_last_week = self.value_last_week + data.value
         logging.debug(f" last_week => {self.value_last_week}")
@@ -427,17 +401,6 @@ class Stat:  # pylint: disable=R0902,R0904
         return self.value_yesterday_evolution
 
     def current_week_last_year(self):
-        # begin = datetime.combine(yesterday - relativedelta(years=1), datetime.min.time())
-        # end = datetime.combine(yesterday - relativedelta(years=1), datetime.max.time())
-        # day_idx = 0
-        # while day_idx < 7:
-        #     day = self.db.get_daily_range(self.usage_point_id, begin, end, self.self.measurement_direction)
-        #     if day:
-        #         for data in day:
-        #             current_week_last_year = current_week_last_year + data.value
-        #     begin = begin - timedelta(days=1)
-        #     end = end - timedelta(days=1)
-        #     day_idx = day_idx + 1
         now_date = datetime.now(timezone.utc)
         yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
         begin = datetime.combine(
@@ -775,7 +738,6 @@ class Stat:  # pylint: disable=R0902,R0904
     def get_price(self):
         data = self.db.get_stat(self.usage_point_id, f"price_{self.measurement_direction}")
         return json.loads(data[0].value)
-        # return ast.literal_eval()
 
     def get_mesure_type(self, measurement_date):
         """Determine the measurement type (HP or HC) based on the given date and off-peak hours.
