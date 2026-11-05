@@ -85,3 +85,19 @@ class Query(object):
     def put(self, params=None, data=None):
         return self._request("PUT", params=params, data=data)
 
+
+def error_response(response, exit_on_403=True):
+    """Build the standard error payload for a failed gateway call.
+
+    Args:
+        response (requests.Response | None): The response returned by Query (None on network error).
+        exit_on_403 (bool): Flag the error as fatal ("exit") on HTTP 403.
+
+    Returns:
+        dict: {"error": True, "description": ..., "status_code": ...} (+ "exit": True on 403).
+    """
+    status_code = response.status_code if response is not None else 500
+    result = {"error": True, "description": error_detail(response), "status_code": status_code}
+    if exit_on_403 and status_code == 403:
+        result["exit"] = True
+    return result

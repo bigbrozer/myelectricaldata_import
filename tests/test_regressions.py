@@ -30,11 +30,34 @@ def test_error_detail(response, expected):
     assert error_detail(response) == expected
 
 
+def test_error_response_exit_on_403():
+    from models.query import error_response
+
+    assert error_response(MockResponse(403, '{"detail": "forbidden"}')) == {
+        "error": True,
+        "description": "forbidden",
+        "status_code": 403,
+        "exit": True,
+    }
+    assert error_response(None)["status_code"] == 500
+
+
 def test_query_masks_authorization_header():
     from models.query import Query
 
     query = Query("http://localhost", headers={"Authorization": "secret", "version": "1"})
     assert query._safe_headers() == {"Authorization": "** hidden **", "version": "1"}
+
+
+def test_daily_get_survives_gateway_errors(mocker):
+    from models.query_daily import Daily
+
+    mocker.patch("models.query.Query.get", return_value=None)
+    daily = Daily(headers={}, usage_point_id="pdl1")
+    daily.activation_date = None
+
+    # Error payloads must never end up in the returned list.
+    assert daily.get() == []
 
 
 def test_status_network_error_has_job_compatible_shape(mocker):

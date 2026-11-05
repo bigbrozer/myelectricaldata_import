@@ -5,14 +5,11 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
 from config import DAILY_MAX_DAYS, URL
+from dependencies import daterange
 from init import CONFIG, DB
-from models.query import Query
+from models.query import Query, error_response
 from models.stat import Stat
 
-
-def daterange(start_date, end_date):
-    for n in range(int((end_date - start_date).days)):
-        yield start_date + timedelta(n)
 
 
 class Daily:
@@ -130,98 +127,40 @@ class Daily:
             else:
                 logging.info(f" Chargement des données depuis MyElectricalData {begin_str} => {end_str}")
                 data = Query(endpoint=f"{self.url}/{endpoint}/", headers=self.headers).get()
-                if data.status_code == 403:
-                    if hasattr(data, "text"):
-                        description = json.loads(data.text)["detail"]
-                    else:
-                        description = data
-                    if hasattr(data, "status_code"):
-                        status_code = data.status_code
-                    else:
-                        status_code = 500
-                    return {
-                        "error": True,
-                        "description": description,
-                        "status_code": status_code,
-                        "exit": True,
-                    }
-                else:
-                    blacklist = 0
-                    max_histo = datetime.combine(datetime.now(), datetime.max.time()) - timedelta(days=1)
-                    if hasattr(data, "status_code"):
-                        if data.status_code == 200:
-                            meter_reading = json.loads(data.text)["meter_reading"]
-                            interval_reading = meter_reading["interval_reading"]
-                            interval_reading_tmp = {}
-                            for interval_reading_data in interval_reading:
-                                interval_reading_tmp[interval_reading_data["date"]] = interval_reading_data["value"]
-                            for single_date in daterange(begin, end):
-                                if single_date < max_histo:
-                                    if single_date.strftime(self.date_format) in interval_reading_tmp:
-                                        # FOUND
-                                        self.db.insert_daily(
-                                            usage_point_id=self.usage_point_id,
-                                            date=datetime.combine(single_date, datetime.min.time()),
-                                            value=interval_reading_tmp[single_date.strftime(self.date_format)],
-                                            blacklist=blacklist,
-                                            measurement_direction=self.measure_type,
-                                        )
-                                    else:
-                                        # NOT FOUND
-                                        self.db.daily_fail_increment(
-                                            usage_point_id=self.usage_point_id,
-                                            date=datetime.combine(single_date, datetime.min.time()),
-                                            measurement_direction=self.measure_type,
-                                        )
-                            return interval_reading
+                if data is None or data.status_code != 200:
+                    return error_response(data)
+                blacklist = 0
+                max_histo = datetime.combine(datetime.now(), datetime.max.time()) - timedelta(days=1)
+                meter_reading = json.loads(data.text)["meter_reading"]
+                interval_reading = meter_reading["interval_reading"]
+                interval_reading_tmp = {}
+                for interval_reading_data in interval_reading:
+                    interval_reading_tmp[interval_reading_data["date"]] = interval_reading_data["value"]
+                for single_date in daterange(begin, end):
+                    if single_date < max_histo:
+                        if single_date.strftime(self.date_format) in interval_reading_tmp:
+                            # FOUND
+                            self.db.insert_daily(
+                                usage_point_id=self.usage_point_id,
+                                date=datetime.combine(single_date, datetime.min.time()),
+                                value=interval_reading_tmp[single_date.strftime(self.date_format)],
+                                blacklist=blacklist,
+                                measurement_direction=self.measure_type,
+                            )
                         else:
-                            return {
-                                "error": True,
-                                "description": json.loads(data.text)["detail"],
-                                "status_code": data.status_code,
-                            }
-                    else:
-                        if hasattr(data, "text"):
-                            description = json.loads(data.text)["detail"]
-                        else:
-                            description = data
-                        if hasattr(data, "status_code"):
-                            status_code = data.status_code
-                        else:
-                            status_code = 500
-                        return {
-                            "error": True,
-                            "description": description,
-                            "status_code": status_code,
-                        }
+                            # NOT FOUND
+                            self.db.daily_fail_increment(
+                                usage_point_id=self.usage_point_id,
+                                date=datetime.combine(single_date, datetime.min.time()),
+                                measurement_direction=self.measure_type,
+                            )
+                return interval_reading
         except Exception as e:
             logging.exception(e)
             logging.error(e)
 
     def get(self):
-        """Generate a range of dates between a start date and an end date.
-
-        Parameters:
-            start_date (datetime.date): The start date of the range.
-            end_date (datetime.date): The end date of the range.
-
-        Yields:
-            datetime.date: The next date in the range.
-
-        Example:
-            >>> start_date = datetime.date(2021, 1, 1)
-            >>> end_date = datetime.date(2021, 1, 5)
-            >>> for date in daterange(start_date, end_date):
-            ...     print(date)
-            ...
-            2021-01-01
-            2021-01-02
-            2021-01-03
-            2021-01-04
-
-        Note:
-            The end date is exclusive, meaning it is not included in the range.
-        """
+        """Fetch (and cache) the daily data, from today back to the activation / max history date."""
         end = datetime.combine((datetime.now() + timedelta(days=2)), datetime.max.time())
         begin = datetime.combine(end - relativedelta(days=self.max_daily), datetime.min.time())
         finish = True
@@ -239,30 +178,27 @@ class Daily:
                 response = self.run(begin, end)
             else:
                 response = self.run(begin, end)
-                begin = begin - relativedelta(months=self.max_daily)
-                end = end - relativedelta(months=self.max_daily)
-            if "exit" in response:
-                finish = False
-                response = {
-                    "error": True,
-                    "description": response["description"],
-                    "status_code": response["status_code"],
-                }
-            if response is not None:
-                result = [*result, *response]
-            else:
+                begin = begin - relativedelta(days=self.max_daily)
+                end = end - relativedelta(days=self.max_daily)
+            if response is None:
                 response = {
                     "error": True,
                     "description": "MyElectricalData est indisponible.",
                 }
-            if "error" in response and response["error"]:
-                logging.error("Echec de la récupération des données")
-                logging.error(f'=> {response["description"]}')
-                logging.error(f"=> {begin.strftime(self.date_format)} -> {end.strftime(self.date_format)}")
-            if "status_code" in response and (response["status_code"] == 409 or response["status_code"] == 400):
-                finish = False
-                logging.error("Arrêt de la récupération des données suite à une erreur.")
-                logging.error(f"Prochain lancement à {datetime.now() + timedelta(seconds=self.config.get('cycle'))}")
+            if isinstance(response, list):
+                result = [*result, *response]
+            elif response.get("error"):
+                if response.get("exit"):
+                    finish = False
+                logging.error("Echec de la récupération des données.")
+                logging.error(f' => {response["description"]}')
+                logging.error(f" => {begin.strftime(self.date_format)} -> {end.strftime(self.date_format)}")
+                if response.get("status_code") in (400, 409):
+                    finish = False
+                    logging.error("Arrêt de la récupération des données suite à une erreur.")
+                    logging.error(
+                        f"Prochain lancement à {datetime.now() + timedelta(seconds=self.config.get('cycle') or 0)}"
+                    )
         return result
 
     def reset(self, date=None):
@@ -284,10 +220,10 @@ class Daily:
             datetime.combine(date - timedelta(days=2), datetime.min.time()),
             datetime.combine(date + timedelta(days=2), datetime.min.time()),
         )
-        if "error" in result and result["error"]:
+        if not isinstance(result, list):
             return {
                 "error": True,
-                "notif": result["description"],
+                "notif": (result or {}).get("description", "MyElectricalData est indisponible."),
                 "fail_count": self.db.get_daily_fail_count(self.usage_point_id, date, self.measure_type),
             }
         for item in result:

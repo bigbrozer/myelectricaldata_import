@@ -3,13 +3,10 @@ import logging
 from datetime import datetime, timedelta
 
 from config import DAILY_MAX_DAYS, URL
+from dependencies import daterange
 from init import CONFIG, DB
-from models.query import Query
+from models.query import Query, error_response
 
-
-def daterange(start_date, end_date):
-    for n in range(int((end_date - start_date).days)):
-        yield start_date + timedelta(n)
 
 
 class Power:
@@ -59,70 +56,38 @@ class Power:
             else:
                 logging.info(f" Chargement des données depuis MyElectricalData {begin_str} => {end_str}")
                 data = Query(endpoint=f"{self.url}/{endpoint}/", headers=self.headers).get()
+                if data is None or data.status_code != 200:
+                    return error_response(data)
                 blacklist = 0
                 max_histo = datetime.combine(datetime.now(), datetime.max.time()) - timedelta(days=1)
-                if hasattr(data, "status_code"):
-                    if data.status_code == 200:
-                        meter_reading = json.loads(data.text)["meter_reading"]
-                        interval_reading = meter_reading["interval_reading"]
-                        interval_reading_tmp = {}
-                        for interval_reading_data in interval_reading:
-                            date = datetime.strptime(interval_reading_data["date"], self.date_format_detail)
-                            date = datetime.combine(date, datetime.min.time())
-                            interval_reading_tmp[date.strftime(self.date_format)] = {
-                                "date": datetime.strptime(
-                                    interval_reading_data["date"],
-                                    self.date_format_detail,
-                                ),
-                                "value": interval_reading_data["value"],
-                            }
-                        for single_date in daterange(begin, end):
-                            if single_date < max_histo:
-                                if single_date.strftime(self.date_format) in interval_reading_tmp:
-                                    # FOUND
-                                    single_date_value = interval_reading_tmp[single_date.strftime(self.date_format)]
-                                    self.db.insert_daily_max_power(
-                                        usage_point_id=self.usage_point_id,
-                                        date=datetime.combine(single_date, datetime.min.time()),
-                                        event_date=single_date_value["date"],
-                                        value=single_date_value["value"],
-                                        blacklist=blacklist,
-                                    )
-                                else:
-                                    # NOT FOUND
-                                    self.db.daily_max_power_fail_increment(
-                                        usage_point_id=self.usage_point_id,
-                                        date=datetime.combine(single_date, datetime.min.time()),
-                                    )
-                        return interval_reading
-                    else:
-                        if hasattr(data, "text"):
-                            description = json.loads(data.text)["detail"]
-                        else:
-                            description = data
-                        if hasattr(data, "status_code"):
-                            status_code = data.status_code
-                        else:
-                            status_code = 500
-                        return {
-                            "error": True,
-                            "description": description,
-                            "status_code": status_code,
-                        }
-                else:
-                    if hasattr(data, "text"):
-                        description = json.loads(data.text)["detail"]
-                    else:
-                        description = data
-                    if hasattr(data, "status_code"):
-                        status_code = data.status_code
-                    else:
-                        status_code = 500
-                    return {
-                        "error": True,
-                        "description": description,
-                        "status_code": status_code,
+                meter_reading = json.loads(data.text)["meter_reading"]
+                interval_reading = meter_reading["interval_reading"]
+                interval_reading_tmp = {}
+                for interval_reading_data in interval_reading:
+                    event_date = datetime.strptime(interval_reading_data["date"], self.date_format_detail)
+                    interval_reading_tmp[event_date.strftime(self.date_format)] = {
+                        "date": event_date,
+                        "value": interval_reading_data["value"],
                     }
+                for single_date in daterange(begin, end):
+                    if single_date < max_histo:
+                        if single_date.strftime(self.date_format) in interval_reading_tmp:
+                            # FOUND
+                            single_date_value = interval_reading_tmp[single_date.strftime(self.date_format)]
+                            self.db.insert_daily_max_power(
+                                usage_point_id=self.usage_point_id,
+                                date=datetime.combine(single_date, datetime.min.time()),
+                                event_date=single_date_value["date"],
+                                value=single_date_value["value"],
+                                blacklist=blacklist,
+                            )
+                        else:
+                            # NOT FOUND
+                            self.db.daily_max_power_fail_increment(
+                                usage_point_id=self.usage_point_id,
+                                date=datetime.combine(single_date, datetime.min.time()),
+                            )
+                return interval_reading
         except Exception as e:
             logging.exception(e)
             logging.error(e)
@@ -147,21 +112,25 @@ class Power:
                 response = self.run(begin, end)
                 begin = begin - timedelta(days=self.max_daily)
                 end = end - timedelta(days=self.max_daily)
-            if response is not None:
-                result = [*result, *response]
-            else:
+            if response is None:
                 response = {
                     "error": True,
                     "description": "MyElectricalData est indisponible.",
                 }
-            if "error" in response and response["error"]:
+            if isinstance(response, list):
+                result = [*result, *response]
+            elif response.get("error"):
+                if response.get("exit"):
+                    finish = False
                 logging.error("Echec de la récupération des données.")
                 logging.error(f' => {response["description"]}')
                 logging.error(f" => {begin.strftime(self.date_format)} -> {end.strftime(self.date_format)}")
-            if "status_code" in response and (response["status_code"] == 409 or response["status_code"] == 400):
-                finish = False
-                logging.error("Arrêt de la récupération des données suite à une erreur.")
-                logging.error(f"Prochain lancement à {datetime.now() + timedelta(seconds=CONFIG.get('cycle'))}")
+                if response.get("status_code") in (400, 409):
+                    finish = False
+                    logging.error("Arrêt de la récupération des données suite à une erreur.")
+                    logging.error(
+                        f"Prochain lancement à {datetime.now() + timedelta(seconds=self.config.get('cycle') or 0)}"
+                    )
         return result
 
     def reset(self, date=None):
@@ -189,10 +158,10 @@ class Power:
             date - timedelta(days=1),
             date + timedelta(days=1),
         )
-        if "error" in result and result["error"]:
+        if not isinstance(result, list):
             return {
                 "error": True,
-                "notif": result["description"],
+                "notif": (result or {}).get("description", "MyElectricalData est indisponible."),
                 "fail_count": self.db.get_daily_max_power_fail_count(self.usage_point_id, date),
             }
         for item in result:
