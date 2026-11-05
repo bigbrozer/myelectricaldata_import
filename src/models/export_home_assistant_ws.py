@@ -268,24 +268,26 @@ class HomeAssistantWs:
                             hour_type = "HP"
                         else:
                             hour_type = "HC"
-                        if 600 <= hour_minute <= 2330:
+                        # A Tempo day runs from 06:00 to 06:00 the next day.
+                        if hour_minute >= 600:
                             date = datetime.combine(data.date, datetime.min.time())
                         else:
                             date = datetime.combine(data.date - timedelta(days=1), datetime.min.time())
 
-                        if date not in tempo_color_ref:
+                        if date not in tempo_color_ref or not db_tempo_price:
                             logging.error(f"Import impossible, pas de donnée tempo sur la date du {data.date}")
-                        else:
-                            day_color = tempo_color_ref[date]
-                            tempo_color = f"{day_color}{hour_type}"
-                            tempo_color_price_key = f"{day_color.lower()}_{hour_type.lower()}"
-                            tempo_price = float(db_tempo_price[tempo_color_price_key])
-                            cost = value / 1000 * tempo_price
-                            name = f"{name} {tempo_color} {measurement_direction}"
-                            statistic_id = f"{statistic_id}_{tempo_color.lower()}_{measurement_direction}"
-                            tag = tempo_color.lower()
+                            continue
+                        day_color = tempo_color_ref[date]
+                        tempo_color = f"{day_color}{hour_type}"
+                        tempo_color_price_key = f"{day_color.lower()}_{hour_type.lower()}"
+                        tempo_price = float(str(db_tempo_price[tempo_color_price_key]).replace(",", "."))
+                        cost = value / 1000 * tempo_price
+                        name = f"{name} {tempo_color} {measurement_direction}"
+                        statistic_id = f"{statistic_id}_{tempo_color.lower()}_{measurement_direction}"
+                        tag = tempo_color.lower()
                     else:
                         logging.error(f"Plan {plan} inconnu.")
+                        continue
 
                     date = TZ_PARIS.localize(data.date, "%Y-%m-%d %H:%M:%S").replace(minute=0, second=0, microsecond=0)
                     key = date.strftime("%Y-%m-%d %H:%M:%S")
