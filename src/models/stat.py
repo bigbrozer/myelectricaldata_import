@@ -840,7 +840,13 @@ class Stat:  # pylint: disable=R0902,R0904
         last_month = ""
         if data:
             tempo_config = self.db.get_tempo_config("price")
-            tempo_data = self.db.get_tempo_range(data[0].date, data[-1].date)
+            tempo_colors = {
+                tempo.date: tempo.color
+                for tempo in self.db.get_tempo_range(
+                    datetime.combine(data[0].date, datetime.min.time()) - timedelta(days=1),
+                    data[-1].date,
+                )
+            }
             for item in data:
                 year = item.date.strftime("%Y")
                 month = item.date.strftime("%m")
@@ -849,7 +855,9 @@ class Stat:  # pylint: disable=R0902,R0904
 
                 measure_type = self.get_mesure_type(item.date)
 
-                tempo_date = datetime.combine(item.date, datetime.min.time())
+                # A Tempo day runs from 06:00 to 06:00 the next day.
+                tempo_day = item.date if item.date.hour >= 6 else item.date - timedelta(days=1)
+                tempo_date = datetime.combine(tempo_day, datetime.min.time())
                 interval = item.interval
                 if year not in result:
                     result[year] = {
@@ -913,9 +921,8 @@ class Stat:  # pylint: disable=R0902,R0904
                         measure_type = "HP"
                     else:
                         measure_type = "HC"
-                    tempo_output = [x for x in tempo_data if x.date == tempo_date]
-                    if tempo_output:
-                        color = tempo_output[0].color
+                    color = tempo_colors.get(tempo_date)
+                    if color:
                         tempo_price = tempo_config[f"{color.lower()}_{measure_type.lower()}"]
                         if isinstance(tempo_price, str):
                             tempo_price = float(tempo_price.replace(",", "."))
