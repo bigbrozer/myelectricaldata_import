@@ -67,8 +67,8 @@ class Tempo:
             result = self.run()
         else:
             valid_date = self.valid_date
-            missing_date = False
-            for i in range(self.nb_check_day):
+            missing_date = len(current_cache) < self.nb_check_day
+            for i in range(min(self.nb_check_day, len(current_cache))):
                 if current_cache[i].date != valid_date:
                     missing_date = True
                 valid_date = valid_date - relativedelta(days=1)
@@ -103,7 +103,7 @@ class Tempo:
             year=int(begin.strftime("%Y")) + 1
         )
         current_tempo_day = self.db.get_tempo_range(begin=begin, end=end)
-        result = self.total_tempo_days
+        result = dict(self.total_tempo_days)
         for day in current_tempo_day:
             result[day.color.lower()] -= 1
         self.db.set_tempo_config("days", result)
