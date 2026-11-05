@@ -16,7 +16,7 @@ class Address:
 
         self.headers = headers
         self.usage_point_id = usage_point_id
-        self.usage_point_config = self.config.usage_point_id_config(self.usage_point_id)
+        self.usage_point_config = self.db.get_usage_point(self.usage_point_id)
 
     def run(self):
         name = "addresses"
@@ -68,7 +68,7 @@ class Address:
                 traceback.print_exc()
                 response = {
                     "error": True,
-                    "description": "Erreur lors de la récupération du contrat.",
+                    "description": "Erreur lors de la récupération de l'adresse.",
                 }
             return response
         else:
