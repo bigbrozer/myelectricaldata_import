@@ -12,6 +12,7 @@ from init import CONFIG, DB, MQTT
 from models.stat import Stat
 
 UTC = pytz.UTC
+TZ_PARIS = pytz.timezone("Europe/Paris")
 
 
 def convert_kw(value):
@@ -739,7 +740,11 @@ class HomeAssistant:  # pylint: disable=R0902
         uniq_id = "myelectricaldata_tempo_info"
         tempo_days = DB.get_tempo_config("days")
         tempo_price = DB.get_tempo_config("price")
-        if 22 > int(datetime.now(tz=UTC).strftime("%H")) < 6:
+        if not tempo_days or not tempo_price:
+            logging.warning("Données Tempo (jours/tarifs) indisponibles.")
+            return
+        hour = datetime.now(tz=TZ_PARIS).hour
+        if hour >= 22 or hour < 6:
             measure_type = "hc"
         else:
             measure_type = "hp"
