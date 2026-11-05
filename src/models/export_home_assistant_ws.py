@@ -45,7 +45,7 @@ class HomeAssistantWs:
                 self.import_data()
         else:
             logging.critical("La configuration Home Assistant WebSocket est erronée")
-        if self.websocket.connected:
+        if self.websocket is not None and self.websocket.connected:
             self.websocket.close()
 
     def load_config(self):
@@ -55,29 +55,30 @@ class HomeAssistantWs:
             bool: True if the configuration is loaded, False otherwise
         """
         self.config = CONFIG.home_assistant_ws_config()
-        if self.config is not None:
-            if "url" in self.config:
-                self.url = self.config["url"]
-                if self.config.get("ssl"):
-                    url_prefix = "wss"
-                else:
-                    url_prefix = "ws"
-                self.url = f"{url_prefix}://{self.url}/api/websocket"
+        if not self.config:
+            return False
+        if "url" in self.config:
+            self.url = self.config["url"]
+            if str2bool(self.config.get("ssl")):
+                url_prefix = "wss"
             else:
-                logging.critical("L'url du WebSocket Home Assistant est obligatoire")
-                return False
-            if "token" in self.config:
-                self.token = self.config["token"]
+                url_prefix = "ws"
+            self.url = f"{url_prefix}://{self.url}/api/websocket"
+        else:
+            logging.critical("L'url du WebSocket Home Assistant est obligatoire")
+            return False
+        if "token" in self.config:
+            self.token = self.config["token"]
+        else:
+            logging.critical("Le token du WebSocket Home Assistant est obligatoire")
+            return False
+        if "purge" in self.config:
+            self.purge = str2bool(self.config["purge"])
+        if "batch_size" in self.config:
+            if not is_integer(self.config["batch_size"]):
+                logging.error("Le paramètre batch_size du WebSocket Home Assistant doit être un entier")
             else:
-                logging.critical("Le token du WebSocket Home Assistant est obligatoire")
-                return False
-            if "purge" in self.config:
-                self.purge = str2bool(self.config["purge"])
-            if "batch_size" in self.config:
-                if not is_integer(self.config["batch_size"]):
-                    logging.error("Le paramètre batch_size du WebSocket Home Assistant doit être un entier")
-                else:
-                    self.batch_size = int(self.config["batch_size"])
+                self.batch_size = int(self.config["batch_size"])
         return True
 
     def connect(self):
@@ -103,7 +104,8 @@ class HomeAssistantWs:
                 return self.authentificate()
             return True
         except Exception as _e:
-            self.websocket.close()
+            if self.websocket is not None:
+                self.websocket.close()
             logging.error(_e)
             logging.critical("Connexion impossible vers Home Assistant")
             logging.warning(
