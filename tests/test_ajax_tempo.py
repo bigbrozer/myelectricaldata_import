@@ -1,6 +1,5 @@
 import logging
 from datetime import datetime
-from json import JSONDecodeError
 from dateutil.relativedelta import relativedelta
 import pytest
 
@@ -27,30 +26,29 @@ def test_fetch_tempo(mocker, caplog, requests_mock, response, status_code):
 
     ajax = Ajax()
 
-    # FIXME: In case the status_code is not 200 and the response is not a valid json, an exception is raised
-    if status_code != 200 and not response:
-        with pytest.raises(JSONDecodeError):
-            ajax.fetch_tempo()
-    else:
-        res = ajax.fetch_tempo()
-        if status_code == 200 and response and response.get("2099-01-01"):
-            assert res == response
+    # An invalid (non JSON) error response must not raise anymore.
+    res = ajax.fetch_tempo()
+    if status_code == 200 and response and response.get("2099-01-01"):
+        assert res == response
 
-            assert m_db_get_tempo.call_count == 1
-            assert m_db_set_tempo.call_count == 1
-            assert m_db_set_tempo_config.call_count == 0
+        assert m_db_get_tempo.call_count == 1
+        assert m_db_set_tempo.call_count == 1
+        assert m_db_set_tempo_config.call_count == 0
 
-            assert not contains_logline(caplog, "{'error': True, 'description': 'Erreur lors "
-                                                "de la récupération de données Tempo.'}", logging.ERROR)
-        else:
-            assert res == "OK"
-
-            assert m_db_get_tempo.call_count == 1
-            assert m_db_set_tempo.call_count == 0
-            assert m_db_set_tempo_config.call_count == 0
-
-            assert contains_logline(caplog, "{'error': True, 'description': 'Erreur lors "
+        assert not contains_logline(caplog, "{'error': True, 'description': 'Erreur lors "
                                             "de la récupération de données Tempo.'}", logging.ERROR)
+    else:
+        assert res == "OK"
+
+        assert m_db_get_tempo.call_count == 1
+        assert m_db_set_tempo.call_count == 0
+        assert m_db_set_tempo_config.call_count == 0
+
+        if status_code == 200:
+            expected_error = "Erreur lors de la récupération de données Tempo."
+        else:
+            expected_error = "MyElectricalData injoignable."
+        assert contains_logline(caplog, f"{{'error': True, 'description': '{expected_error}'}}", logging.ERROR)
 
 
 @pytest.mark.parametrize("response", [None, [Tempo(date="2099-01-01", color="turquoise")]])

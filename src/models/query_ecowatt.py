@@ -9,7 +9,7 @@ from dateutil.relativedelta import relativedelta
 from config import URL
 from dependencies import title
 from init import CONFIG, DB
-from models.query import Query
+from models.query import Query, error_detail
 
 
 class Ecowatt:
@@ -24,7 +24,7 @@ class Ecowatt:
         end = (datetime.now() + relativedelta(days=3)).strftime("%Y-%m-%d")
         target = f"{self.url}/rte/ecowatt/{start}/{end}"
         query_response = Query(endpoint=target).get()
-        if query_response.status_code == 200:
+        if query_response is not None and query_response.status_code == 200:
             try:
                 response_json = json.loads(query_response.text)
                 for date, data in response_json.items():
@@ -42,7 +42,7 @@ class Ecowatt:
         else:
             return {
                 "error": True,
-                "description": json.loads(query_response.text)["detail"],
+                "description": error_detail(query_response),
             }
 
     def get(self):

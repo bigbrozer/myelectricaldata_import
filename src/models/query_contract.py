@@ -7,7 +7,7 @@ import traceback
 from config import URL
 from dependencies import title
 from init import DB
-from models.query import Query
+from models.query import Query, error_detail
 
 
 class Contract:
@@ -27,7 +27,7 @@ class Contract:
         target = f"{self.url}/{endpoint}"
 
         query_response = Query(endpoint=target, headers=self.headers).get()
-        if query_response.status_code == 200:
+        if query_response is not None and query_response.status_code == 200:
             try:
                 response_json = json.loads(query_response.text)
                 response = response_json["customer"]["usage_points"][0]
@@ -89,7 +89,7 @@ class Contract:
         else:
             return {
                 "error": True,
-                "description": json.loads(query_response.text)["detail"],
+                "description": error_detail(query_response),
             }
 
     def get(self):

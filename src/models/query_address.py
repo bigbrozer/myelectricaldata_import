@@ -5,7 +5,7 @@ import traceback
 from config import URL
 from dependencies import title
 from init import CONFIG, DB
-from models.query import Query
+from models.query import Query, error_detail
 
 
 class Address:
@@ -26,7 +26,7 @@ class Address:
         target = f"{self.url}/{endpoint}"
 
         response = Query(endpoint=target, headers=self.headers).get()
-        if response.status_code == 200:
+        if response is not None and response.status_code == 200:
             try:
                 response_json = json.loads(response.text)
                 response = response_json["customer"]["usage_points"][0]
@@ -72,7 +72,7 @@ class Address:
                 }
             return response
         else:
-            return {"error": True, "description": json.loads(response.text)["detail"]}
+            return {"error": True, "description": error_detail(response)}
 
     def get(self):
         current_cache = self.db.get_addresse(usage_point_id=self.usage_point_id)

@@ -1,6 +1,40 @@
 """Regression tests for bugs fixed in the src/ review (Phase 1)."""
 
+import dataclasses
+
 import pytest
+
+
+@dataclasses.dataclass
+class MockResponse:
+    status_code: int
+    text: str = ""
+
+    @property
+    def ok(self):
+        return 200 <= self.status_code < 400
+
+
+@pytest.mark.parametrize(
+    "response, expected",
+    [
+        (None, "MyElectricalData injoignable."),
+        (MockResponse(500, '{"detail": "boom"}'), "boom"),
+        (MockResponse(502, "<html>Bad Gateway</html>"), "<html>Bad Gateway</html>"),
+        (MockResponse(500, ""), "MyElectricalData injoignable."),
+    ],
+)
+def test_error_detail(response, expected):
+    from models.query import error_detail
+
+    assert error_detail(response) == expected
+
+
+def test_query_masks_authorization_header():
+    from models.query import Query
+
+    query = Query("http://localhost", headers={"Authorization": "secret", "version": "1"})
+    assert query._safe_headers() == {"Authorization": "** hidden **", "version": "1"}
 
 
 YAML = """cycle: 3600

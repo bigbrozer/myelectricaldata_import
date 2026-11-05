@@ -8,7 +8,7 @@ from dateutil.relativedelta import relativedelta
 from config import URL
 from dependencies import title
 from init import CONFIG, DB
-from models.query import Query
+from models.query import Query, error_detail
 
 
 class Tempo:
@@ -29,7 +29,7 @@ class Tempo:
         end = (datetime.now() + relativedelta(days=2)).strftime("%Y-%m-%d")
         target = f"{self.url}/rte/tempo/{start}/{end}"
         query_response = Query(endpoint=target).get()
-        if query_response.status_code == 200:
+        if query_response is not None and query_response.status_code == 200:
             try:
                 response_json = json.loads(query_response.text)
                 for date, color in response_json.items():
@@ -47,7 +47,7 @@ class Tempo:
         else:
             return {
                 "error": True,
-                "description": json.loads(query_response.text)["detail"],
+                "description": error_detail(query_response),
             }
 
     def get(self):
@@ -112,7 +112,7 @@ class Tempo:
     def fetch_day(self):
         target = f"{self.url}/edf/tempo/days"
         query_response = Query(endpoint=target).get()
-        if query_response.status_code == 200:
+        if query_response is not None and query_response.status_code == 200:
             try:
                 response_json = json.loads(query_response.text)
                 self.db.set_tempo_config("days", response_json)
@@ -129,13 +129,13 @@ class Tempo:
         else:
             return {
                 "error": True,
-                "description": json.loads(query_response.text)["detail"],
+                "description": error_detail(query_response),
             }
 
     def fetch_price(self):
         target = f"{self.url}/edf/tempo/price"
         query_response = Query(endpoint=target).get()
-        if query_response.status_code == 200:
+        if query_response is not None and query_response.status_code == 200:
             try:
                 response_json = json.loads(query_response.text)
                 self.db.set_tempo_config("price", response_json)
@@ -152,5 +152,5 @@ class Tempo:
         else:
             return {
                 "error": True,
-                "description": json.loads(query_response.text)["detail"],
+                "description": error_detail(query_response),
             }

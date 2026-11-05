@@ -15,14 +15,14 @@ class Cache:
     def reset(self):
         target = f"{self.url}/cache/{self.usage_point_id}"
         response = Query(endpoint=target, headers=self.headers).delete()
-        if response.status_code == 200:
+        if response is not None and response.status_code == 200:
             try:
                 status = json.loads(response.text)
                 for key, value in status.items():
                     logging.info(f"{key}: {value}")
                 status["version"] = get_version()
                 return status
-            except LookupError:
+            except (LookupError, ValueError):
                 return {"error": True, "description": "Erreur lors du reset du cache."}
         else:
             return {"error": True, "description": "Erreur lors du reset du cache."}

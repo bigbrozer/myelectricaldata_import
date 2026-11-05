@@ -26,7 +26,8 @@ def test_get_tempo(mocker, job, caplog, requests_mock, response, status_code):
     if status_code != 200:
         assert m_db_get_tempo.call_count == 1
         assert m_db_set_tempo.call_count == 0
-        assert m_db_set_tempo_config.call_count == 0
+        # The Tempo days are still computed from the local cache (calc_day), prices are not fetched.
+        assert m_db_set_tempo_config.call_count == 1
 
         # FIXME: No error is displayed
         # assert contains_logline(caplog, "{'error': True, 'description': 'Erreur lors "

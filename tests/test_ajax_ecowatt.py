@@ -1,7 +1,6 @@
 import ast
 import logging
 from datetime import datetime
-from json import JSONDecodeError
 from dateutil.relativedelta import relativedelta
 import pytest
 
@@ -9,12 +8,12 @@ from db_schema import Ecowatt
 from tests.conftest import contains_logline
 
 
-@pytest.mark.parametrize("response, status_code, expect_exception, expect_success", [
-    (None, 200, False, False),
-    (None, 500, True, False),
-    ({"2099-01-01": {"value": 9000, "message": "mock message", "detail": "mock detail"}}, 200, False, True)
+@pytest.mark.parametrize("response, status_code, expect_success, expected_error", [
+    (None, 200, False, "Erreur lors de la récupération des données Ecowatt."),
+    (None, 500, False, "MyElectricalData injoignable."),
+    ({"2099-01-01": {"value": 9000, "message": "mock message", "detail": "mock detail"}}, 200, True, None)
 ])
-def test_fetch_ecowatt_empty(mocker, caplog, requests_mock, response, status_code, expect_exception, expect_success):
+def test_fetch_ecowatt_empty(mocker, caplog, requests_mock, response, status_code, expect_success, expected_error):
     from models.ajax import Ajax
     from config import URL
 
@@ -29,28 +28,23 @@ def test_fetch_ecowatt_empty(mocker, caplog, requests_mock, response, status_cod
 
     ajax = Ajax()
 
-    # FIXME: In case the status_code is not 200 and the response is not a valid json, an exception is raised
-    if expect_exception:
-        with pytest.raises(JSONDecodeError):
-            ajax.fetch_ecowatt()
-    else:
-        res = ajax.fetch_ecowatt()
-        if expect_success:
-            assert res == response
+    # An invalid (non JSON) error response must not raise anymore.
+    res = ajax.fetch_ecowatt()
+    if expect_success:
+        assert res == response
 
-            assert m_db_get_ecowatt.call_count == 1
-            assert m_db_set_ecowatt.call_count == 1
+        assert m_db_get_ecowatt.call_count == 1
+        assert m_db_set_ecowatt.call_count == 1
 
-            assert not contains_logline(caplog, "{'error': True, 'description': 'Erreur "
-                                                "lors de la récupération des données Ecowatt.'}", logging.ERROR)
-        else:
-            assert res == "OK"
-
-            assert m_db_get_ecowatt.call_count == 1
-            assert m_db_set_ecowatt.call_count == 0
-
-            assert contains_logline(caplog, "{'error': True, 'description': 'Erreur "
+        assert not contains_logline(caplog, "{'error': True, 'description': 'Erreur "
                                             "lors de la récupération des données Ecowatt.'}", logging.ERROR)
+    else:
+        assert res == "OK"
+
+        assert m_db_get_ecowatt.call_count == 1
+        assert m_db_set_ecowatt.call_count == 0
+
+        assert contains_logline(caplog, f"{{'error': True, 'description': '{expected_error}'}}", logging.ERROR)
 
 
 @pytest.mark.parametrize("response, expect_exception, expect_success", [
