@@ -953,7 +953,7 @@ class Stat:  # pylint: disable=R0902,R0904
         begin = datetime.combine(specific_date, datetime.min.time())
         end = datetime.combine(specific_date, datetime.max.time())
         value = 0
-        for item in self.db.get_detail_range(self.usage_point_id, begin, end):
+        for item in self.db.get_detail_range(self.usage_point_id, begin, end, self.measurement_direction or "consumption"):
             if self.get_mesure_type(item.date).upper() == mesure_type.upper():
                 value += item.value / (60 / item.interval)
         return value
