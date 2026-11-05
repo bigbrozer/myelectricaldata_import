@@ -3,10 +3,13 @@ import hashlib
 import json
 import logging
 import os
+import sys
 import traceback
 from datetime import datetime, timedelta
 from os.path import exists
 
+from alembic import command as alembic_command
+from alembic.config import Config as AlembicConfig
 from sqlalchemy import asc, create_engine, delete, desc, func, inspect, select, update
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.pool import NullPool
@@ -56,8 +59,9 @@ class Database:
                 self.uri = self.config.storage_config()
             else:
                 logging.critical(f"Database {self.storage_type} not supported (only SQLite & PostgresSQL)")
+                sys.exit(1)
 
-        os.system(f"cd {APPLICATION_PATH}; DB_URL='{self.uri}' alembic upgrade head ")
+        self.migrate()
 
         self.engine = create_engine(
             self.uri,
@@ -75,6 +79,15 @@ class Database:
         if os.path.isfile(f"{self.path}/enedisgateway.db"):
             title_warning("=> Migration de l'ancienne base de données vers la nouvelle structure.")
             self.migratev7tov8()
+
+    def migrate(self):
+        """Apply the Alembic migrations (in-process, the URI never reaches a shell or the process list)."""
+        alembic_config = AlembicConfig(os.path.join(APPLICATION_PATH, "alembic.ini"))
+        alembic_config.set_main_option("script_location", os.path.join(APPLICATION_PATH, "alembic"))
+        # Keep the application logging configuration (see alembic/env.py).
+        alembic_config.attributes["configure_logger"] = False
+        os.environ["DB_URL"] = self.uri
+        alembic_command.upgrade(alembic_config, "head")
 
     def migratev7tov8(self):
         """Migrates the database from version 7 to version 8."""
